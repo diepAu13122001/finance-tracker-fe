@@ -129,14 +129,6 @@ export const TransactionItem = ({ transaction, onEdit, hideDate = false }: Trans
                     ) : (
                         <span className="text-xs text-text-muted italic">Chưa có ví</span>
                     )}
-                    {!hideDate && (
-                        <>
-                            <span className="text-xs text-text-muted">·</span>
-                            <span className="text-xs text-text-muted flex-shrink-0">
-                                {formatRelativeDateVI(transaction.transactionDate)}
-                            </span>
-                        </>
-                    )}
                 </div>
             </div>
 
