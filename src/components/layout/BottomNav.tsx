@@ -20,9 +20,9 @@ interface BottomNavItem {
 
 const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
     { label: 'Home', href: '/', icon: LayoutDashboard },
-    { label: 'Đồ dùng', href: '/household', icon: ShoppingBag, requiredPlan: 'PREMIUM' },
+    { label: 'Nguồn tiền', href: '/wallets', icon: Wallet},
     { label: 'Phân tích', href: '/analytics', icon: BarChart2, isFocus: true, requiredPlan: 'PLUS' },
-    { label: 'Nguồn tiền', href: '/wallets', icon: Wallet, requiredPlan: 'PLUS' },
+    { label: 'Đồ dùng', href: '/household', icon: ShoppingBag, requiredPlan: 'PREMIUM' },
     { label: 'AI Chat', href: '/ai', icon: Bot, requiredPlan: 'PREMIUM' },
 ]
 

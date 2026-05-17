@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Wallet, CreditCard, Archive } from 'lucide-react'
+import { Plus, Wallet, CreditCard, Archive, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
 import { DS } from '@/lib/design-system'
 import { WalletCard } from '@/components/wallets/WalletCard'
@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom'
 
 type WalletTab = 'NORMAL' | 'DEBT' | 'CLOSED'
 
-const FREE_WALLET_LIMIT = 5
+const FREE_ACTIVE_LIMIT = 5
 
 const WalletsPage = () => {
   const [modalOpen, setModalOpen] = useState(false)
@@ -24,11 +24,11 @@ const WalletsPage = () => {
   const [defaultType, setDefaultType] = useState<WalletType>('NORMAL')
   const [drawerWallet, setDrawerWallet] = useState<WalletResponse | null>(null)
 
-  const { isFree, isPlus } = usePlan()
+  const { isFree } = usePlan()
   const navigate = useNavigate()
 
-  // Free user cũng có thể xem ví (và ví mặc định "Tiền mặt" được tạo khi đăng ký)
-  const { data: allWallets, isLoading } = useWallets(true) // enable cho cả free user
+  // Free user cũng có thể fetch wallets — WalletController.getAll() không còn @RequiresPlan
+  const { data: allWallets, isLoading } = useWallets(true)
   const { data: walletCount } = useWalletCount()
 
   const activeWallets = allWallets?.filter(w => w.status === 'ACTIVE') ?? []
@@ -40,8 +40,9 @@ const WalletsPage = () => {
   const totalDebt = debtWallets.reduce((s, w) => s + w.currentAmount, 0)
   const netWorth = totalBalance - totalDebt
 
-  const totalWalletCount = walletCount?.total ?? (allWallets?.length ?? 0)
-  const isAtFreeLimit = isFree && totalWalletCount >= FREE_WALLET_LIMIT
+  // Giới hạn Free: chỉ tính ví ACTIVE (ví đã đóng không tính)
+  const activeCount = walletCount?.total ?? activeWallets.length
+  const isAtFreeLimit = isFree && activeCount >= FREE_ACTIVE_LIMIT
 
   const openCreate = (type: WalletType) => {
     if (isAtFreeLimit) {
@@ -69,7 +70,7 @@ const WalletsPage = () => {
           <h1 className={DS.heading1}>Nguồn tiền</h1>
           <p className={DS.muted}>Quản lý ví và khoản nợ của bạn</p>
         </div>
-        {!isFree && (
+        {!isAtFreeLimit && (
           <div className="hidden md:block">
             <Button leftIcon={<Plus size={16} />} onClick={() => openCreate(activeTab === 'CLOSED' ? 'NORMAL' : activeTab)}>
               Thêm mới
@@ -78,27 +79,21 @@ const WalletsPage = () => {
         )}
       </div>
 
-      {/* Free user: hiển thị giới hạn ví */}
+      {/* Free user: hiển thị slot ví ACTIVE */}
       {isFree && (
-        <div className={`
-                    px-4 py-3 rounded-xl border
-                    ${isAtFreeLimit
-            ? 'bg-danger-50 border-danger-200'
-            : 'bg-amber-50 border-amber-200'
-          }
-                `}>
+        <div className={`px-4 py-3 rounded-xl border ${isAtFreeLimit ? 'bg-danger-50 border-danger-200' : 'bg-amber-50 border-amber-200'}`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-amber-800">
                 {isAtFreeLimit
-                  ? `🚫 Đã đạt giới hạn ${FREE_WALLET_LIMIT} nguồn tiền`
-                  : `⚠ ${totalWalletCount}/${FREE_WALLET_LIMIT} nguồn tiền`
+                  ? `🚫 Đã có ${FREE_ACTIVE_LIMIT} ví đang hoạt động`
+                  : `⚠ ${activeCount}/${FREE_ACTIVE_LIMIT} ví đang hoạt động`
                 }
               </p>
               <p className="text-xs text-amber-700 mt-0.5">
                 {isAtFreeLimit
-                  ? 'Nâng cấp Plus để tạo không giới hạn'
-                  : 'Gói miễn phí giới hạn 5 nguồn tiền (kể cả đã đóng)'
+                  ? 'Đóng ví cũ để giải phóng slot, hoặc nâng cấp Plus không giới hạn'
+                  : 'Ví đã đóng không tính vào giới hạn — đóng ví giải phóng slot'
                 }
               </p>
             </div>
@@ -110,17 +105,16 @@ const WalletsPage = () => {
               Nâng cấp
             </button>
           </div>
-          {/* Progress bar */}
           <div className="mt-2 h-1.5 bg-amber-200 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${isAtFreeLimit ? 'bg-danger-500' : 'bg-amber-500'}`}
-              style={{ width: `${Math.min((totalWalletCount / FREE_WALLET_LIMIT) * 100, 100)}%` }}
+              style={{ width: `${Math.min((activeCount / FREE_ACTIVE_LIMIT) * 100, 100)}%` }}
             />
           </div>
         </div>
       )}
 
-      {/* Summary — chỉ hiện nếu có ví */}
+      {/* Summary — chỉ hiện nếu có ví active */}
       {!isLoading && activeWallets.length > 0 && (
         <div className={DS.card}>
           <div className="grid grid-cols-3 gap-4 text-center divide-x divide-surface-border">
@@ -173,20 +167,10 @@ const WalletsPage = () => {
       {/* Tab: Tài khoản */}
       {activeTab === 'NORMAL' && !isLoading && (
         normalWallets.length === 0
-          ? <EmptyState
-            title="Chưa có tài khoản nào"
-            desc="Tạo ví tiền mặt, ngân hàng, ví điện tử..."
-            onAdd={() => openCreate('NORMAL')}
-            locked={isAtFreeLimit}
-          />
+          ? <EmptyState title="Chưa có tài khoản nào" desc="Tạo ví tiền mặt, ngân hàng, ví điện tử..." onAdd={() => openCreate('NORMAL')} locked={isAtFreeLimit} />
           : <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {normalWallets.map(w => (
-              <WalletCard
-                key={w.id}
-                wallet={w}
-                onEdit={() => openEdit(w)}
-                onClick={() => openDrawer(w)}
-              />
+              <WalletCard key={w.id} wallet={w} onEdit={() => openEdit(w)} onClick={() => openDrawer(w)} />
             ))}
           </div>
       )}
@@ -194,20 +178,10 @@ const WalletsPage = () => {
       {/* Tab: Khoản nợ */}
       {activeTab === 'DEBT' && !isLoading && (
         debtWallets.length === 0
-          ? <EmptyState
-            title="Chưa có khoản nợ nào"
-            desc="Theo dõi thẻ tín dụng và khoản trả góp..."
-            onAdd={() => openCreate('DEBT')}
-            locked={isAtFreeLimit}
-          />
+          ? <EmptyState title="Chưa có khoản nợ nào" desc="Theo dõi thẻ tín dụng và khoản trả góp..." onAdd={() => openCreate('DEBT')} locked={isAtFreeLimit} />
           : <div className="flex flex-col gap-3">
             {debtWallets.map(w => (
-              <WalletCard
-                key={w.id}
-                wallet={w}
-                onEdit={() => openEdit(w)}
-                onClick={() => openDrawer(w)}
-              />
+              <WalletCard key={w.id} wallet={w} onEdit={() => openEdit(w)} onClick={() => openDrawer(w)} />
             ))}
           </div>
       )}
@@ -221,30 +195,26 @@ const WalletsPage = () => {
               <p className={DS.heading3}>Không có ví nào đã đóng</p>
               <p className={`${DS.muted} mt-2`}>Ví đóng vẫn giữ lịch sử giao dịch cũ</p>
             </div>
-          )
-          : (
+          ) : (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 px-1">
-                <Archive size={14} className="text-text-muted" />
+                <RotateCcw size={14} className="text-text-muted" />
                 <span className="text-xs text-text-muted">
-                  Ví đóng vẫn giữ lịch sử. Nhấn vào để xem giao dịch cũ.
+                  Ví đóng không tính vào giới hạn.
+                  {isFree && !isAtFreeLimit && ' Bạn còn slot — có thể mở lại.'}
+                  {isFree && isAtFreeLimit && ' Đang đầy slot — đóng ví active trước để mở lại.'}
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {closedWallets.map(w => (
-                  <WalletCard
-                    key={w.id}
-                    wallet={w}
-                    onEdit={() => { }} // không cho edit ví đã đóng
-                    onClick={() => openDrawer(w)}
-                  />
+                  <WalletCard key={w.id} wallet={w} onEdit={() => { }} onClick={() => openDrawer(w)} />
                 ))}
               </div>
             </div>
           )
       )}
 
-      {/* FAB mobile — chỉ hiện ở tab NORMAL và DEBT, không bị lock */}
+      {/* FAB mobile */}
       {activeTab !== 'CLOSED' && !isAtFreeLimit && (
         <button
           onClick={() => openCreate(activeTab)}
@@ -254,32 +224,20 @@ const WalletsPage = () => {
         </button>
       )}
 
-      <WalletFormModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        editingWallet={editing}
-        defaultType={defaultType}
-      />
-
-      <WalletTransactionsDrawer
-        wallet={drawerWallet}
-        onClose={() => setDrawerWallet(null)}
-      />
+      <WalletFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} editingWallet={editing} defaultType={defaultType} />
+      <WalletTransactionsDrawer wallet={drawerWallet} onClose={() => setDrawerWallet(null)} />
     </div>
   )
 }
 
-const EmptyState = ({
-  title, desc, onAdd, locked,
-}: { title: string; desc: string; onAdd: () => void; locked?: boolean }) => (
+const EmptyState = ({ title, desc, onAdd, locked }: { title: string; desc: string; onAdd: () => void; locked?: boolean }) => (
   <div className={`${DS.card} text-center py-10`}>
     <p className={DS.heading3}>{title}</p>
     <p className={`${DS.muted} mt-2 mb-4`}>{desc}</p>
-    {locked ? (
-      <p className="text-xs text-amber-600">Đã đạt giới hạn — nâng cấp để thêm mới</p>
-    ) : (
-      <Button leftIcon={<Plus size={16} />} onClick={onAdd}>Tạo mới</Button>
-    )}
+    {locked
+      ? <p className="text-xs text-amber-600">Đã đạt giới hạn ví active — đóng ví cũ hoặc nâng cấp Plus</p>
+      : <Button leftIcon={<Plus size={16} />} onClick={onAdd}>Tạo mới</Button>
+    }
   </div>
 )
 

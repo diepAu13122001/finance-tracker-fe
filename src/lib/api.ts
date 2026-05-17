@@ -1,5 +1,5 @@
 import axios from "axios";
-import { notify, TOAST_MESSAGES } from "@/lib/toast";
+import { notify } from "@/lib/toast";
 import { useAuthStore } from "@/stores/authStore";
 
 export const api = axios.create({
@@ -8,11 +8,8 @@ export const api = axios.create({
   timeout: 10000,
 });
 
-// ─── Request Interceptor ──────────────────────────────────────────────────────
 api.interceptors.request.use(
   (config) => {
-    // 🔄 SỬA: đọc từ Zustand store thay vì localStorage trực tiếp
-    // Zustand persist lưu state dưới key "auth-storage", không phải "token"
     const token = useAuthStore.getState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -22,14 +19,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// ─── Response Interceptor ─────────────────────────────────────────────────────
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
     const errorCode = error.response?.data?.error;
 
-    // 401 — token hết hạn hoặc không hợp lệ
+    // 401 — hết hạn
     if (status === 401) {
       useAuthStore.getState().logout();
       notify.error("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
@@ -37,22 +33,18 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 403 PLAN_UPGRADE_REQUIRED — redirect pricing
+    // 403 PLAN_UPGRADE_REQUIRED:
+    // Trước đây dùng window.location.href → xóa history → không quay lại được.
+    // Fix: KHÔNG redirect ở đây. Mỗi component tự xử lý qua getErrorCode(err).
+    // WalletController.getAll/getActive đã bỏ @RequiresPlan → Free user không còn
+    // nhận 403 khi vào trang Wallets.
     if (status === 403 && errorCode === "PLAN_UPGRADE_REQUIRED") {
-      const requiredPlan = error.response?.data?.requiredPlan;
-      window.location.href = `/pricing?required=${requiredPlan}`;
+      console.debug("[API] 403 PLAN_UPGRADE_REQUIRED — component will handle");
       return Promise.reject(error);
     }
 
-    // 👇 THÊM MỚI: network error (server restart, offline)
     if (!error.response) {
-      // Network error — server chưa ready hoặc offline
-      // Không logout, chỉ báo lỗi để user biết
-      console.warn(
-        "[API] Network error — server may be restarting",
-        error.message,
-      );
-      // Không notify ở đây — để từng component tự handle
+      console.warn("[API] Network error", error.message);
     }
 
     return Promise.reject(error);

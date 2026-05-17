@@ -29,7 +29,7 @@ const NAV_ITEMS: NavItem[] = [
     { label: 'Giao dịch', href: '/expenses', icon: ArrowLeftRight },
     { label: 'Danh mục', href: '/categories', icon: Tag, requiredPlan: 'PLUS' },
     { label: 'Phân tích', href: '/analytics', icon: BarChart2, requiredPlan: 'PLUS' },
-    { label: 'Nguồn tiền', href: '/wallets', icon: Wallet, requiredPlan: 'PLUS' },
+    { label: 'Nguồn tiền', href: '/wallets', icon: Wallet },
     { label: 'AI Assistant', href: '/ai', icon: Bot, requiredPlan: 'PLUS' },
     { label: 'Đồ dùng', href: '/household', icon: ShoppingBag, requiredPlan: 'PREMIUM' },
     { label: 'Cài đặt', href: '/settings', icon: Settings },
