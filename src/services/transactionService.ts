@@ -8,8 +8,6 @@ import type {
   TransactionSummary,
 } from "@/types/transaction";
 
-// ✅ Re-export types để code cũ vẫn compile
-// (nếu nơi khác đang `import { TransactionType } from '@/services/transactionService'`)
 export type {
   TransactionType,
   FilterType,
@@ -20,8 +18,6 @@ export type {
   SummaryParams,
 } from "@/types/transaction";
 
-// ─── API calls ────────────────────────────────────────────────────────────────
-
 export const transactionService = {
   create: async (data: TransactionRequest): Promise<TransactionResponse> => {
     const response = await api.post<TransactionResponse>(
@@ -31,6 +27,10 @@ export const transactionService = {
     return response.data;
   },
 
+  /**
+   * Lấy tất cả giao dịch của user (main list).
+   * Tự động loại bỏ transfer_in (backend xử lý), chỉ hiện transfer_out.
+   */
   getAll: async (
     page = 0,
     size = 20,
@@ -39,9 +39,25 @@ export const transactionService = {
   ): Promise<TransactionPage> => {
     const params: Record<string, unknown> = { page, size };
     if (filter !== "ALL") params.type = filter;
-    if (categoryId) params.categoryId = categoryId; 
+    if (categoryId) params.categoryId = categoryId;
     const response = await api.get<TransactionPage>("/api/transactions", {
       params,
+    });
+    return response.data;
+  },
+
+  /**
+   * Lấy tất cả giao dịch của một wallet cụ thể.
+   * Bao gồm cả transfer_in và transfer_out của ví đó.
+   * Dùng trong WalletTransactionsDrawer.
+   */
+  getAllByWallet: async (
+    walletId: string,
+    page = 0,
+    size = 20,
+  ): Promise<TransactionPage> => {
+    const response = await api.get<TransactionPage>("/api/transactions", {
+      params: { page, size, walletId },
     });
     return response.data;
   },

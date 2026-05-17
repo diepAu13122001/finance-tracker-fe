@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import type { WalletRequest, WalletResponse } from "@/types/wallet";
+import type { TransactionPage } from "@/types/transaction";
 
 export const walletService = {
   getAll: async (): Promise<WalletResponse[]> => {
@@ -9,6 +10,14 @@ export const walletService = {
 
   getActive: async (): Promise<WalletResponse[]> => {
     const { data } = await api.get<WalletResponse[]>("/api/wallets/active");
+    return data;
+  },
+
+  /** Tổng số ví của user (bao gồm đã đóng) — dùng để hiển thị giới hạn Free user */
+  getCount: async (): Promise<{ total: number; limit: number }> => {
+    const { data } = await api.get<{ total: number; limit: number }>(
+      "/api/wallets/count",
+    );
     return data;
   },
 

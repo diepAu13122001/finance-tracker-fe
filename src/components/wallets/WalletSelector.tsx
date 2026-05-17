@@ -3,7 +3,7 @@ import { ChevronDown, Wallet, Plus } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { useActiveWallets } from '@/hooks/useWallets'
 import { DS } from '@/lib/design-system'
-import { WALLET_TYPE_CONFIG, type WalletType } from '@/types/wallet'
+import { WALLET_TYPE_CONFIG } from '@/types/wallet'
 import { formatVND } from '@/utils/format'
 import { useNavigate } from 'react-router-dom'
 import { usePlan } from '@/hooks/usePlan'
@@ -17,15 +17,23 @@ interface WalletSelectorProps {
     required?: boolean
     label?: string
     error?: string
+    /** Loại trừ ví này khỏi danh sách (dùng cho transfer: ví đích không được trùng ví nguồn) */
+    excludeWalletId?: string
 }
 
 export const WalletSelector = ({
-    value, onChange, required = true, label = 'Nguồn tiền', error,
+    value,
+    onChange,
+    required = false,
+    label = 'Nguồn tiền',
+    error,
+    excludeWalletId,
 }: WalletSelectorProps) => {
     const [open, setOpen] = useState(false)
     const navigate = useNavigate()
     const { isPlus } = usePlan()
-    const { data: wallets, isLoading } = useActiveWallets(isPlus)
+    const { data: allWallets, isLoading } = useActiveWallets(true) // luôn fetch
+    const wallets = allWallets?.filter(w => w.id !== excludeWalletId) ?? []
     const selected = wallets?.find(w => w.id === value) ?? null
 
     return (
@@ -112,18 +120,22 @@ export const WalletSelector = ({
                             )
                         })}
 
-                        {!isLoading && (!wallets || wallets.length === 0) && (
+                        {!isLoading && wallets.length === 0 && (
                             <div className="px-3 py-4 text-center">
                                 <Wallet size={24} className="mx-auto text-text-muted mb-2" />
-                                <p className="text-sm text-text-muted mb-2">Chưa có nguồn tiền nào</p>
-                                <button onClick={() => { navigate('/wallets'); setOpen(false) }}
-                                    className="text-sm text-primary-600 hover:underline flex items-center gap-1 mx-auto">
-                                    <Plus size={14} /> Tạo nguồn tiền đầu tiên
-                                </button>
+                                <p className="text-sm text-text-muted mb-2">
+                                    {excludeWalletId ? 'Không còn ví nào khả dụng' : 'Chưa có nguồn tiền nào'}
+                                </p>
+                                {!excludeWalletId && (
+                                    <button onClick={() => { navigate('/wallets'); setOpen(false) }}
+                                        className="text-sm text-primary-600 hover:underline flex items-center gap-1 mx-auto">
+                                        <Plus size={14} /> Tạo nguồn tiền đầu tiên
+                                    </button>
+                                )}
                             </div>
                         )}
 
-                        {!isLoading && wallets && wallets.length > 0 && (
+                        {!isLoading && wallets.length > 0 && (
                             <button onClick={() => { navigate('/wallets'); setOpen(false) }}
                                 className="w-full px-3 py-2.5 text-xs text-primary-600 hover:bg-primary-50 border-t border-surface-border flex items-center gap-1.5">
                                 <Plus size={12} /> Quản lý nguồn tiền

@@ -14,8 +14,9 @@ export interface TransactionRequest {
   note?: string;
   transactionDate: string; // "YYYY-MM-DD"
   currency?: string;
-  categoryId?: string | null; // null/undefined = không phân loại
-  walletId?: string | null;
+  categoryId?: string | null;
+  walletId?: string | null; // nguồn tiền (hoặc ví NGUỒN cho TRANSFER)
+  targetWalletId?: string | null; // ví ĐÍCH — chỉ dùng khi type = TRANSFER
 }
 
 // ─── Response từ API ──────────────────────────────────────────────────────────
@@ -27,10 +28,14 @@ export interface TransactionResponse {
   currency: string;
   note: string | null;
   transactionDate: string;
-  source: string;
+  source: string; // 'manual' | 'transfer_out' | 'transfer_in'
   createdAt: string;
-  category: CategoryResponse | null; // null nếu chưa phân loại
-  wallet: WalletResponse | null; // null nếu không liên kết nguồn tiền
+  category: CategoryResponse | null;
+  wallet: WalletResponse | null;
+  // Transfer fields
+  transferPairId?: string | null;
+  transferSourceWalletName?: string | null; // tên ví nguồn trong transfer
+  transferTargetWalletName?: string | null; // tên ví đích trong transfer
 }
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
