@@ -12,6 +12,7 @@ interface CategorySelectorProps {
     onChange: (categoryId: string | null) => void
     type: TransactionType
     label?: string
+    required?: boolean
 }
 
 export const CategorySelector = ({
@@ -19,12 +20,11 @@ export const CategorySelector = ({
     onChange,
     type,
     label = 'Danh mục',
+    required = false
 }: CategorySelectorProps) => {
 
     const { data: categories, isLoading } = useCategories(type)
     const [open, setOpen] = useState(false)
-
-    const selected = categories?.find(c => c.id === value) ?? null
 
     // Helper tìm category trong tree (kể cả children)
     const findInTree = (id: string | null): CategoryResponse | null => {
@@ -36,6 +36,8 @@ export const CategorySelector = ({
         }
         return null
     }
+
+    const selected = findInTree(value)
 
     return (
         <div className="relative">
@@ -55,11 +57,7 @@ export const CategorySelector = ({
         `}
             >
 
-
-                const selected = findInTree(value)
-
-                // Render selected: nếu có parentName thì hiện "Parent → Child"
-                {selected && (
+                {selected ? (
                     <div className="flex items-center gap-1.5">
                         {selected.parentName && (
                             <>
@@ -69,7 +67,12 @@ export const CategorySelector = ({
                         )}
                         <CategoryBadge category={selected} size="sm" />
                     </div>
+                ) : (
+                    <span className="text-text-muted text-sm">
+                        {required ? 'Chọn phân loại *' : 'Chọn phân loại (tùy chọn)'}
+                    </span>
                 )}
+
                 <ChevronDown
                     size={16}
                     className={`text-text-muted transition-transform ${open ? 'rotate-180' : ''}`}
