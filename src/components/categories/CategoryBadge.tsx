@@ -9,12 +9,14 @@ interface CategoryBadgeProps {
     category: CategoryResponse | null
     size?: 'sm' | 'md'
     showName?: boolean
+    truncate?: boolean
 }
 
 export const CategoryBadge = ({
     category,
     size = 'md',
     showName = true,
+    truncate = false
 }: CategoryBadgeProps) => {
     if (!category) {
         return (
@@ -36,17 +38,34 @@ export const CategoryBadge = ({
     return (
         <span
             className={`
-        inline-flex items-center gap-1.5
-        rounded-full font-medium
-        ${padding} ${fontSize}
-      `}
+                inline-flex items-center gap-1.5
+                min-w-0 max-w-full overflow-hidden
+                rounded-full font-medium
+                ${padding} ${fontSize}
+            `}
             style={{
-                backgroundColor: `${category.color}15`,  // 15 = ~8% opacity
+                backgroundColor: `${category.color}15`,
                 color: category.color,
             }}
         >
-            <IconComponent size={iconSize} />
-            {showName && category.name}
+            <IconComponent
+                size={iconSize}
+                className="shrink-0"
+            />
+
+            {showName && (
+                <span
+                    className={`
+                    min-w-0
+                    ${truncate
+                            ? 'truncate whitespace-nowrap overflow-hidden'
+                            : ''
+                        }
+                `}
+                >
+                    {category.name}
+                </span>
+            )}
         </span>
     )
 }

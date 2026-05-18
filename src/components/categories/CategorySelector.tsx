@@ -50,22 +50,23 @@ export const CategorySelector = ({
                 type="button"
                 onClick={() => setOpen(!open)}
                 className={`
-          ${DS.inputBase}
-          flex items-center justify-between
-          cursor-pointer
-          {selected ? 'py-1.5' : ''} 
-        `}
+                    ${DS.inputBase}
+                        flex items-center justify-between
+                        min-w-0
+                        cursor-pointer
+                        {selected ? 'py-1.5' : ''} 
+                `}
             >
 
                 {selected ? (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
                         {selected.parentName && (
                             <>
-                                <span className="text-xs text-text-muted">{selected.parentName}</span>
+                                <span className="text-xs text-text-muted max-w-20 truncate">{selected.parentName}</span>
                                 <ChevronRight size={10} className="text-text-muted" />
                             </>
                         )}
-                        <CategoryBadge category={selected} size="sm" />
+                        <CategoryBadge category={selected} size="sm" truncate/>
                     </div>
                 ) : (
                     <span className="text-text-muted text-sm">
@@ -123,11 +124,11 @@ export const CategorySelector = ({
                                     type="button"
                                     onClick={() => { onChange(root.id); setOpen(false) }}
                                     className={`
-                w-full px-3 py-2 text-left
-                hover:bg-surface-muted transition-colors
-                flex items-center gap-2 font-semibold
-                ${value === root.id ? 'bg-surface-muted' : ''}
-            `}
+                                        w-full px-3 py-2 text-left
+                                        hover:bg-surface-muted transition-colors
+                                        flex items-center gap-2 font-semibold
+                                        ${value === root.id ? 'bg-surface-muted' : ''}
+                                    `}
                                 >
                                     <CategoryBadge category={root} size="sm" />
                                 </button>
@@ -139,11 +140,11 @@ export const CategorySelector = ({
                                         type="button"
                                         onClick={() => { onChange(child.id); setOpen(false) }}
                                         className={`
-                    w-full pl-8 pr-3 py-2 text-left
-                    hover:bg-surface-muted transition-colors
-                    flex items-center gap-2
-                    ${value === child.id ? 'bg-surface-muted' : ''}
-                `}
+                                            w-full pl-8 pr-3 py-2 text-left
+                                            hover:bg-surface-muted transition-colors
+                                            flex items-center gap-2
+                                            ${value === child.id ? 'bg-surface-muted' : ''}
+                                        `}
                                     >
                                         <span className="text-text-muted">└</span>
                                         <CategoryBadge category={child} size="sm" />

@@ -57,7 +57,7 @@ export const CategoryCard = ({ category, onEdit, onClick }: CategoryCardProps) =
 
             {/* Info — 👇 THÊM totalAmount */}
             <div className="flex-1 min-w-0">
-                <div className="font-semibold text-text-primary truncate">
+                <div className="font-semibold text-text-primary ">
                     {category.name}
                 </div>
                 <div className="text-xs text-text-muted flex items-center gap-1.5 flex-wrap">

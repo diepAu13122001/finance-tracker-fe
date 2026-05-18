@@ -45,7 +45,7 @@ export const CreditAlertBanner = () => {
                             className={`flex-shrink-0 mt-0.5 ${isDanger ? 'text-danger-600' : 'text-amber-600'}`}
                         />
                         <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-semibold ${isDanger ? 'text-danger-700' : 'text-amber-700'}`}>
+                            <p className={`text-sm font-semibold ${isDanger ? 'text-danger-600' : 'text-amber-700'}`}>
                                 {isDanger ? '🚨' : '⚠️'} {card.name}
                                 {' '}—{' '}
                                 <span className="font-bold">{card.progressPercent.toFixed(0)}%</span> hạn mức
