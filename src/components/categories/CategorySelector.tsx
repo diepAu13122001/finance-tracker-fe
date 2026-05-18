@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { ChevronDown, Plus } from 'lucide-react'
+import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import { useCategories } from '@/hooks/useCategories'
 import { CategoryBadge } from './CategoryBadge'
 import { DS } from '@/lib/design-system'
 import { Link } from 'react-router-dom'
 import type { TransactionType } from '@/types/transaction'
+import type { CategoryResponse } from '@/types/category'
 
 interface CategorySelectorProps {
     value: string | null
@@ -25,6 +26,17 @@ export const CategorySelector = ({
 
     const selected = categories?.find(c => c.id === value) ?? null
 
+    // Helper tìm category trong tree (kể cả children)
+    const findInTree = (id: string | null): CategoryResponse | null => {
+        if (!id || !categories) return null
+        for (const root of categories) {
+            if (root.id === id) return root
+            const child = root.children?.find(c => c.id === id)
+            if (child) return child
+        }
+        return null
+    }
+
     return (
         <div className="relative">
             {label && (
@@ -42,10 +54,21 @@ export const CategorySelector = ({
           {selected ? 'py-1.5' : ''} 
         `}
             >
-                {selected ? (
-                    <CategoryBadge category={selected} size="sm" />
-                ) : (
-                    <span className="text-text-muted">Chọn danh mục (tùy chọn)</span>
+
+
+                const selected = findInTree(value)
+
+                // Render selected: nếu có parentName thì hiện "Parent → Child"
+                {selected && (
+                    <div className="flex items-center gap-1.5">
+                        {selected.parentName && (
+                            <>
+                                <span className="text-xs text-text-muted">{selected.parentName}</span>
+                                <ChevronRight size={10} className="text-text-muted" />
+                            </>
+                        )}
+                        <CategoryBadge category={selected} size="sm" />
+                    </div>
                 )}
                 <ChevronDown
                     size={16}
@@ -89,21 +112,41 @@ export const CategorySelector = ({
                             </div>
                         )}
 
-                        {/* Categories list */}
-                        {!isLoading && categories?.map(cat => (
-                            <button
-                                key={cat.id}
-                                type="button"
-                                onClick={() => { onChange(cat.id); setOpen(false) }}
-                                className={`
-                  w-full px-3 py-2 text-left
-                  hover:bg-surface-muted transition-colors
-                  flex items-center gap-2
-                  ${value === cat.id ? 'bg-surface-muted' : ''}
+                        {/* Categories list — render dạng tree */}
+                        {!isLoading && categories?.map(root => (
+                            <div key={root.id}>
+                                {/* Root option */}
+                                <button
+                                    type="button"
+                                    onClick={() => { onChange(root.id); setOpen(false) }}
+                                    className={`
+                w-full px-3 py-2 text-left
+                hover:bg-surface-muted transition-colors
+                flex items-center gap-2 font-semibold
+                ${value === root.id ? 'bg-surface-muted' : ''}
+            `}
+                                >
+                                    <CategoryBadge category={root} size="sm" />
+                                </button>
+
+                                {/* Children — indent */}
+                                {root.children?.map(child => (
+                                    <button
+                                        key={child.id}
+                                        type="button"
+                                        onClick={() => { onChange(child.id); setOpen(false) }}
+                                        className={`
+                    w-full pl-8 pr-3 py-2 text-left
+                    hover:bg-surface-muted transition-colors
+                    flex items-center gap-2
+                    ${value === child.id ? 'bg-surface-muted' : ''}
                 `}
-                            >
-                                <CategoryBadge category={cat} size="sm" />
-                            </button>
+                                    >
+                                        <span className="text-text-muted">└</span>
+                                        <CategoryBadge category={child} size="sm" />
+                                    </button>
+                                ))}
+                            </div>
                         ))}
 
                         {/* Empty state với link tạo mới */}

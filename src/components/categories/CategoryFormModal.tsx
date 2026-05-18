@@ -8,21 +8,23 @@ import { Button } from '@/components/shared/Button'
 import { Input } from '@/components/shared/Input'
 import { DS } from '@/lib/design-system'
 import { animations } from '@/lib/animations'
+import { useCategories } from '@/hooks/useCategories'
 import {
     CATEGORY_ICONS,
     CATEGORY_COLORS,
     type CategoryResponse,
-    type TransactionType,
+
 } from '@/types/category'
 import { useCreateCategory, useUpdateCategory } from '@/hooks/useCategories'
 import { getErrorMessage } from '@/utils/errorUtils'
+import { type TransactionType } from '@/types/transaction'
 
 const toPascalCase = (str: string): string =>
     str.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
 
 const categorySchema = z.object({
     name: z.string().min(1, 'Tên không được để trống').max(50, 'Tối đa 50 ký tự'),
-    type: z.enum(['INCOME', 'EXPENSE']),
+    type: z.enum(['INCOME', 'EXPENSE', 'TRANSFER']),
 })
 
 type CategoryFormData = z.infer<typeof categorySchema>
@@ -31,14 +33,16 @@ interface CategoryFormModalProps {
     isOpen: boolean
     onClose: () => void
     editingCategory: CategoryResponse | null
-    defaultType?: TransactionType  // 👈 THÊM MỚI: để follow filter tab
+    defaultType?: TransactionType
+    presetParent?: CategoryResponse | null
 }
 
 export const CategoryFormModal = ({
     isOpen,
     onClose,
     editingCategory,
-    defaultType = 'EXPENSE',  // 👈 THÊM MỚI
+    defaultType = 'EXPENSE',
+    presetParent = null,
 }: CategoryFormModalProps) => {
 
     const isEditMode = editingCategory !== null
@@ -46,9 +50,13 @@ export const CategoryFormModal = ({
     const [selectedIcon, setSelectedIcon] = useState<string>('tag')
     const [selectedColor, setSelectedColor] = useState<string>('#82b01e')
     const [serverError, setServerError] = useState<string | null>(null)
-
+    const [parentId, setParentId] = useState<string | null>(null)
     const createMutation = useCreateCategory()
     const updateMutation = useUpdateCategory()
+    // Lấy danh sách root categories cùng type (để làm dropdown chọn parent)
+    const { data: rootsTree } = useCategories(defaultType)
+    // Chỉ lấy root từ tree (mỗi item có children)
+    const availableParents = rootsTree ?? []
 
     const {
         register,
@@ -69,13 +77,18 @@ export const CategoryFormModal = ({
         if (!isOpen) return
         reset({
             name: editingCategory?.name ?? '',
-            // 🔄 SỬA: edit mode dùng category type, create mode dùng defaultType từ filter
             type: editingCategory?.type ?? defaultType,
         })
         setSelectedIcon(editingCategory?.icon ?? 'tag')
         setSelectedColor(editingCategory?.color ?? '#82b01e')
+        // Init parent: edit mode → giữ parent cũ; create với presetParent
+        setParentId(
+            editingCategory?.parentCategoryId
+            ?? presetParent?.id
+            ?? null
+        )
         setServerError(null)
-    }, [isOpen, editingCategory, reset, defaultType])
+    }, [isOpen, editingCategory, reset, defaultType, presetParent])
 
     const onSubmit = async (data: CategoryFormData) => {
         setServerError(null)
@@ -84,6 +97,7 @@ export const CategoryFormModal = ({
             type: data.type,
             icon: selectedIcon,
             color: selectedColor,
+            parentCategoryId: parentId,  // gửi kèm
         }
         try {
             if (isEditMode && editingCategory) {
@@ -152,7 +166,28 @@ export const CategoryFormModal = ({
                         {errors.type && (
                             <p className="text-xs text-danger-600 mt-1">{errors.type.message}</p>
                         )}
+
+
                     </div>
+
+                    {/* Parent selector — chỉ hiện khi không phải edit root, không phải edit category đang có con */}
+                    {!editingCategory?.children?.length && (
+                        <div>
+                            <label className={DS.label}>Nhóm cha (tùy chọn)</label>
+                            <select
+                                value={parentId ?? ''}
+                                onChange={e => setParentId(e.target.value || null)}
+                                className={`${DS.inputBase} mt-1`}
+                            >
+                                <option value="">— Không có (đây là nhóm chính) —</option>
+                                {availableParents.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-text-muted mt-1">
+                                Chọn nhóm cha để tạo danh mục con. Bỏ trống để tạo nhóm chính.
+                            </p>
+                        </div>)}
 
                     <Input
                         label="Tên danh mục"

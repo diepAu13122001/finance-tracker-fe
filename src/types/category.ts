@@ -10,6 +10,9 @@ export interface CategoryResponse {
   createdAt: string;
   transactionCount?: number; // optional — chỉ có ở /api/categories
   totalAmount?: number; // 👈 THÊM MỚI: tổng tiền all-time của category
+  parentCategoryId?: string | null;
+  parentName?: string | null;
+  children?: CategoryResponse[]; // chỉ có khi GET tree
 }
 
 // ── Request gửi lên API ─────────────────────────────────────
@@ -18,6 +21,7 @@ export interface CategoryRequest {
   icon?: string; // optional, backend default 'tag'
   color?: string; // optional, backend default '#82b01e'
   type: TransactionType;
+  parentCategoryId?: string | null;
 }
 
 // ── Icon list cho CategorySelector ──────────────────────────
