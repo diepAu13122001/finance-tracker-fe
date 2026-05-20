@@ -1,83 +1,81 @@
 import type { TransactionType } from "./transaction";
 
-// ── Response từ API ─────────────────────────────────────────
 export interface CategoryResponse {
   id: string;
   name: string;
-  icon: string; // tên icon từ lucide-react
-  color: string; // hex color #RRGGBB
+  icon: string;
+  color: string;
   type: TransactionType;
   createdAt: string;
-  transactionCount?: number; // optional — chỉ có ở /api/categories
-  totalAmount?: number; // 👈 THÊM MỚI: tổng tiền all-time của category
+  transactionCount?: number;
+  totalAmount?: number;
   parentCategoryId?: string | null;
   parentName?: string | null;
-  children?: CategoryResponse[]; // chỉ có khi GET tree
+  children?: CategoryResponse[];
   monthlyBudget?: number | null;
-  effectiveBudget?: number; // budget sau rollover
+  budgetStartedAt?: string | null; // ── THÊM MỚI ──
+  effectiveBudget?: number;
   currentMonthSpent?: number;
-  rolloverAmount?: number; // +/- (dư hoặc lố)
+  rolloverAmount?: number;
   budgetProgressPercent?: number;
   overBudget?: boolean;
   warningBudget?: boolean;
 }
 
-// ── Request gửi lên API ─────────────────────────────────────
 export interface CategoryRequest {
   name: string;
-  icon?: string; // optional, backend default 'tag'
-  color?: string; // optional, backend default '#82b01e'
+  icon?: string;
+  color?: string;
   type: TransactionType;
   parentCategoryId?: string | null;
   monthlyBudget?: number | null;
 }
 
-// ── Top spending ─────────────────────────────────────
+// ── Top spending — đồng nhất với CategoryResponse ──
 export interface TopSpendingItem {
   categoryId: string;
   name: string;
   icon: string;
   color: string;
   monthlyBudget: number | null;
+  effectiveBudget: number | null; // ── THÊM MỚI ──
+  rolloverAmount: number | null; // ── THÊM MỚI ──
   totalSpent: number;
   transactionCount: number;
   budgetProgressPercent: number | null;
   overBudget: boolean;
 }
 
-// ── Icon list cho CategorySelector ──────────────────────────
-// Khớp với tên icon trong lucide-react để render được
 export const CATEGORY_ICONS = [
   "tag",
-  "utensils", // ăn uống
-  "car", // di chuyển
-  "shopping-bag", // mua sắm
-  "home", // nhà cửa
-  "heart", // sức khỏe
-  "gift", // quà cáp
-  "briefcase", // công việc
-  "book", // học hành
-  "coffee", // cafe
-  "plane", // du lịch
-  "dumbbell", // thể thao
-  "film", // giải trí
-  "wallet", // lương
-  "trending-up", // đầu tư
-  "banknote", // tiền mặt
+  "utensils",
+  "car",
+  "shopping-bag",
+  "home",
+  "heart",
+  "gift",
+  "briefcase",
+  "book",
+  "coffee",
+  "plane",
+  "dumbbell",
+  "film",
+  "wallet",
+  "trending-up",
+  "banknote",
 ] as const;
 
 export type CategoryIcon = (typeof CATEGORY_ICONS)[number];
 
-// ── Color list cho CategorySelector ─────────────────────────
 export const CATEGORY_COLORS = [
-  "#82b01e", // green
-  "#ff748b", // pink
-  "#b267e0", // purple
-  "#42b9bc", // teal
-  "#f59e0b", // amber
-  "#3b82f6", // blue
-  "#ef4444", // red
-  "#10b981", // emerald
-  "#8b5cf6", // violet
-  "#ec4899", // hot pink
+  "#82b01e",
+  "#ff748b",
+  "#b267e0",
+  "#42b9bc",
+  "#f59e0b",
+  "#3b82f6",
+  "#ef4444",
+  "#10b981",
+  "#8b5cf6",
+  "#ec4899",
 ] as const;

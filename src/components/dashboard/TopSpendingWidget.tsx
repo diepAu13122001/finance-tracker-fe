@@ -57,62 +57,50 @@ export const TopSpendingWidget = () => {
 
     return (
         <div className={DS.card}>
-            {/* Header */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                     <TrendingDown size={18} className="text-danger-500" />
                     <span className={DS.heading3}>Top chi tiêu</span>
                 </div>
 
-                {/* Period selector */}
                 <div className="flex p-0.5 bg-surface-muted rounded-md text-xs">
                     {([
                         { key: 'month' as const, label: 'Tháng' },
                         { key: 'quarter' as const, label: 'Quý' },
                         { key: 'year' as const, label: 'Năm' },
                     ]).map(tab => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setMode(tab.key)}
+                        <button key={tab.key} onClick={() => setMode(tab.key)}
                             className={`px-2 py-1 rounded transition-colors ${mode === tab.key
-                                    ? 'bg-white text-text-primary shadow-sm'
-                                    : 'text-text-muted hover:text-text-primary'
-                                }`}
-                        >
+                                ? 'bg-white text-text-primary shadow-sm'
+                                : 'text-text-muted hover:text-text-primary'
+                                }`}>
                             {tab.label}
                         </button>
                     ))}
                 </div>
             </div>
 
-            {/* Top 3 list */}
             <div className="flex flex-col gap-2">
                 {data.map((item, idx) => {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const IconComp = (Icons as any)[toPascalCase(item.icon)] || Icons.Tag
-                    return (
-                        <div
-                            key={item.categoryId}
-                            onClick={() => navigate('/categories')}
-                            className="
-                                flex items-center gap-3 px-3 py-2.5 rounded-lg
-                                hover:bg-surface-muted cursor-pointer transition-colors
-                            "
-                        >
-                            {/* Rank */}
-                            <span className="text-xs font-bold text-text-muted w-4">
-                                {idx + 1}
-                            </span>
 
-                            {/* Icon */}
-                            <div
-                                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                                style={{ backgroundColor: item.color + '20', color: item.color }}
-                            >
+                    // ── FIX LỖI #4: dùng effectiveBudget cho cả % và tooltip ──
+                    // budgetProgressPercent từ backend đã tính theo effectiveBudget
+                    const hasBudget = item.effectiveBudget !== null && item.effectiveBudget !== undefined && item.effectiveBudget > 0
+
+                    return (
+                        <div key={item.categoryId}
+                            onClick={() => navigate('/categories')}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg
+                                hover:bg-surface-muted cursor-pointer transition-colors">
+                            <span className="text-xs font-bold text-text-muted w-4">{idx + 1}</span>
+
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                                style={{ backgroundColor: item.color + '20', color: item.color }}>
                                 <IconComp size={16} />
                             </div>
 
-                            {/* Info */}
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-sm font-semibold text-text-primary truncate">
@@ -126,16 +114,25 @@ export const TopSpendingWidget = () => {
                                 </div>
                                 <div className="text-xs text-text-muted">
                                     {item.transactionCount} giao dịch
-                                    {item.budgetProgressPercent !== null && (
+                                    {hasBudget && item.budgetProgressPercent !== null && (
                                         <span className={`ml-1 font-medium ${item.overBudget ? 'text-danger-600' : 'text-text-secondary'
                                             }`}>
                                             · {item.budgetProgressPercent.toFixed(0)}% ngân sách
                                         </span>
                                     )}
                                 </div>
+                                {/* Hiển thị effective budget nếu có rollover */}
+                                {hasBudget && item.rolloverAmount !== null && item.rolloverAmount !== 0 && (
+                                    <div className="text-xs text-text-muted mt-0.5">
+                                        Ngân sách kỳ: {formatVND(item.effectiveBudget!)}
+                                        {item.rolloverAmount! > 0
+                                            ? <span className="text-success-600 ml-1">(+{formatVND(item.rolloverAmount!)} dư)</span>
+                                            : <span className="text-danger-600 ml-1">({formatVND(item.rolloverAmount!)} lố)</span>
+                                        }
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Amount */}
                             <div className="text-right flex-shrink-0">
                                 <div className="text-sm font-bold text-danger-600">
                                     {formatVND(item.totalSpent)}
