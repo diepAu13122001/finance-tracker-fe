@@ -18,6 +18,8 @@ const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'))
 const SettingPsage = lazy(() => import('@/pages/SettingsPage'))
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'))
 const WalletsPage = lazy(() => import('@/pages/WalletsPage'))
+const PaymentSuccessPage = lazy(() => import('@/pages/PaymentSuccessPage'))
+const PaymentCancelPage = lazy(() => import('@/pages/PaymentCancelPage'))
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="p-8">
@@ -128,6 +130,8 @@ function App() {
               <Route path="/ai" element={<PlaceholderPage title="🤖 AI Assistant" />} />
               <Route path="/household" element={<PlaceholderPage title="🏠 Đồ dùng" />} />
               <Route path="/settings" element={<SettingPsage />} />
+              <Route path="/payment/success" element={<PaymentSuccessPage />} />
+              <Route path="/payment/cancel" element={<PaymentCancelPage />} />
             </Route>
           </Route>
 

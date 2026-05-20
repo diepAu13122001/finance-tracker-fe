@@ -5,6 +5,9 @@ import { DS } from '@/lib/design-system'
 import { usePlan } from '@/hooks/usePlan'
 import { PLAN_CONFIG } from '@/types/plans'
 import { ChevronLeft } from 'lucide-react'
+import { paymentService } from '@/services/paymentService'
+import { notify } from '@/lib/toast'
+import { useState } from 'react'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -24,7 +27,7 @@ const PLAN_CARDS = [
     {
         planId: 'PLUS' as const,
         name: 'Plus',
-        price: 0,  // miễn phí trong beta
+        price: PLAN_CONFIG.PLUS.priceVnd,
         description: 'Đầy đủ tính năng cho cá nhân',
         isPopular: true,
         features: [
@@ -72,18 +75,28 @@ const PricingPage = () => {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const { plan } = usePlan()
+    const [upgrading, setUpgrading] = useState<'PLUS' | 'PREMIUM' | null>(null)
 
     // /pricing?required=PREMIUM — hiện banner khi bị redirect từ PlanGate
     const requiredPlan = searchParams.get('required')
 
     // Tuần 4: thay bằng PayOS payment flow
-    const handleUpgrade = (planId: 'PLUS' | 'PREMIUM') => {
+    const handleUpgrade = async (planId: 'PLUS' | 'PREMIUM') => {
         if (planId === 'PLUS') {
-            // PLUS miễn phí trong beta — gọi API upgrade thẳng
-            alert('Tính năng nâng cấp sẽ được xây dựng ở Tuần 4')
-        } else {
-            // PREMIUM — chuyển sang trang thanh toán PayOS
-            navigate('/checkout?plan=PREMIUM')
+            // PLUS đang miễn phí trong beta — chưa tích hợp PayOS
+            notify.success('Gói Plus miễn phí trong beta — liên hệ admin để kích hoạt')
+            return
+        }
+
+        // PREMIUM → tạo PayOS link, redirect sang trang thanh toán
+        setUpgrading(planId)
+        try {
+            const { checkoutUrl } = await paymentService.createPaymentLink(planId)
+            // Redirect cứng — PayOS host trang thanh toán ngoài app
+            window.location.href = checkoutUrl
+        } catch (err) {
+            notify.error('Không tạo được link thanh toán, vui lòng thử lại')
+            setUpgrading(null)
         }
     }
 

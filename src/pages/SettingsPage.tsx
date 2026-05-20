@@ -140,8 +140,7 @@ const SettingsPage = () => {
                                 Ngày bắt đầu tháng mới
                                 <span className="text-danger-500 ml-0.5">*</span>
                             </label>
-                            <select
-                                {...profileForm.register('monthStartDay'), {valueAsNumber: true}}
+                            <select {...profileForm.register('monthStartDay', { valueAsNumber: true })}
                                 className={DS.inputBase}
                             >
                                 {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (

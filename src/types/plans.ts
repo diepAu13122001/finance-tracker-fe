@@ -76,7 +76,7 @@ export const PLAN_CONFIG: Record<PlanId, PlanConfig> = {
     id: "PLUS",
     name: "Plus",
     nameVi: "Plus",
-    priceVnd: 0, // miễn phí trong giai đoạn beta
+    priceVnd: 0,
     maxTransactionsPerMonth: -1,
     maxAiMessagesPerMonth: 20,
   },
