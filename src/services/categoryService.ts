@@ -1,9 +1,13 @@
 import { api } from "@/lib/api";
-import type {
-  CategoryRequest,
-  CategoryResponse,
-  TransactionType,
-} from "@/types/category";
+import type { CategoryRequest, CategoryResponse, TopSpendingItem } from "@/types/category";
+import type { TransactionType } from "./transactionService";
+
+export interface TopSpendingParams {
+  year?: number;
+  month?: number;
+  quarter?: number;
+  limit?: number;
+}
 
 export const categoryService = {
   /**
@@ -48,5 +52,15 @@ export const categoryService = {
    */
   delete: async (id: string): Promise<void> => {
     await api.delete(`/api/categories/${id}`);
+  },
+
+  getTopSpending: async (
+    params: TopSpendingParams = {},
+  ): Promise<TopSpendingItem[]> => {
+    const { data } = await api.get<TopSpendingItem[]>(
+      "/api/categories/top-spending",
+      { params },
+    );
+    return data;
   },
 };

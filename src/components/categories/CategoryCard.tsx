@@ -55,26 +55,84 @@ export const CategoryCard = ({ category, onEdit, onClick }: CategoryCardProps) =
                 <IconComponent size={20} />
             </div>
 
-            {/* Info — 👇 THÊM totalAmount */}
+            {/* Info */}
             <div className="flex-1 min-w-0">
-                <div className="font-semibold text-text-primary ">
-                    {category.name}
+                <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-text-primary truncate">
+                        {category.name}
+                    </span>
+                    {/* Badge cảnh báo */}
+                    {category.overBudget && (
+                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-danger-100 text-danger-700 font-bold">
+                            Vượt ngân sách
+                        </span>
+                    )}
+                    {category.warningBudget && !category.overBudget && (
+                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold">
+                            Sắp hết
+                        </span>
+                    )}
                 </div>
-                <div className="text-xs text-text-muted flex items-center gap-1.5 flex-wrap">
+
+                <div className="text-xs text-text-muted flex items-center gap-1.5 flex-wrap mt-0.5">
                     <span>{category.type === 'INCOME' ? '↑ Thu nhập' : '↓ Chi tiêu'}</span>
                     {category.transactionCount !== undefined && (
                         <span>· {category.transactionCount} giao dịch</span>
                     )}
-                    {/* 👇 THÊM MỚI: tổng tiền */}
                     {category.totalAmount !== undefined && category.totalAmount > 0 && (
-                        <span
-                            className="font-medium"
-                            style={{ color: category.color }}
-                        >
+                        <span className="font-medium" style={{ color: category.color }}>
                             · {formatVND(category.totalAmount)}
                         </span>
                     )}
                 </div>
+
+                {/* Budget progress với rollover info */}
+                {category.monthlyBudget && category.monthlyBudget > 0 && (
+                    <div className="mt-2 flex flex-col gap-1">
+                        <div className="flex justify-between text-xs">
+                            <span className="text-text-muted">
+                                {formatVND(category.currentMonthSpent ?? 0)}
+                                {' / '}
+                                {formatVND(category.effectiveBudget ?? category.monthlyBudget)}
+                            </span>
+                            <span
+                                className={`font-bold ${category.overBudget ? 'text-danger-600'
+                                        : category.warningBudget ? 'text-amber-600'
+                                            : 'text-text-secondary'
+                                    }`}
+                            >
+                                {(category.budgetProgressPercent ?? 0).toFixed(0)}%
+                            </span>
+                        </div>
+
+                        <div className="h-1.5 bg-surface-muted rounded-full overflow-hidden">
+                            <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{
+                                    width: `${Math.min(category.budgetProgressPercent ?? 0, 100)}%`,
+                                    backgroundColor: category.overBudget ? '#ef4444'
+                                        : category.warningBudget ? '#f59e0b'
+                                            : category.color,
+                                }}
+                            />
+                        </div>
+
+                        {/* Hiển thị rollover nếu có */}
+                        {category.rolloverAmount !== undefined && category.rolloverAmount !== 0 && (
+                            <p className="text-xs">
+                                {category.rolloverAmount > 0 ? (
+                                    <span className="text-success-600">
+                                        ↪ Dư tháng trước: +{formatVND(category.rolloverAmount)}
+                                    </span>
+                                ) : (
+                                    <span className="text-danger-600">
+                                        ↪ Lố tháng trước: {formatVND(category.rolloverAmount)}
+                                    </span>
+                                )}
+                            </p>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Actions */}

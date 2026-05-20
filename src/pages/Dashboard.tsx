@@ -10,6 +10,7 @@ import { Plus, Tag, Settings, ArrowLeftRight } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { animations } from '@/lib/animations'
 import { WalletSummaryWidget } from '@/components/dashboard/WalletSummaryWidget'
+import { TopSpendingWidget } from '@/components/dashboard/TopSpendingWidget'
 
 const Dashboard = () => {
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -64,6 +65,9 @@ const Dashboard = () => {
 
             {/* Wallet summary widget */}
             <WalletSummaryWidget />
+
+            {/* top spending categories */}
+            <TopSpendingWidget />
 
             {/* Recent transactions */}
             <div className={`flex flex-col gap-3 ${animations.fadeIn}`}>

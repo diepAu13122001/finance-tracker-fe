@@ -1,12 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { categoryService } from "@/services/categoryService";
-import type {
-  CategoryRequest,
-  CategoryResponse,
-  TransactionType,
-} from "@/types/category";
+import type { CategoryRequest, CategoryResponse } from "@/types/category";
 import { notify } from "@/lib/toast";
 import { getApiErrorMessage } from "@/utils/errorUtils";
+import type { TopSpendingParams } from "@/services/categoryService";
+import type { TransactionType } from "@/types/transaction";
 
 // ── Cache keys ─────────────────────────────────────────────
 // Pattern hierarchy: invalidate ['categories'] sẽ clear cả ['categories', 'EXPENSE']
@@ -97,5 +95,13 @@ export const useDeleteCategory = () => {
     onError: (err: unknown) => {
       notify.error(getApiErrorMessage(err));
     },
+  });
+};
+
+export const useTopSpending = (params: TopSpendingParams = {}) => {
+  return useQuery({
+    queryKey: ["categories", "top-spending", params],
+    queryFn: () => categoryService.getTopSpending(params),
+    staleTime: 2 * 60 * 1000,
   });
 };

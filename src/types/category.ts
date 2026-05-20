@@ -13,6 +13,13 @@ export interface CategoryResponse {
   parentCategoryId?: string | null;
   parentName?: string | null;
   children?: CategoryResponse[]; // chỉ có khi GET tree
+  monthlyBudget?: number | null;
+  effectiveBudget?: number; // budget sau rollover
+  currentMonthSpent?: number;
+  rolloverAmount?: number; // +/- (dư hoặc lố)
+  budgetProgressPercent?: number;
+  overBudget?: boolean;
+  warningBudget?: boolean;
 }
 
 // ── Request gửi lên API ─────────────────────────────────────
@@ -22,6 +29,20 @@ export interface CategoryRequest {
   color?: string; // optional, backend default '#82b01e'
   type: TransactionType;
   parentCategoryId?: string | null;
+  monthlyBudget?: number | null;
+}
+
+// ── Top spending ─────────────────────────────────────
+export interface TopSpendingItem {
+  categoryId: string;
+  name: string;
+  icon: string;
+  color: string;
+  monthlyBudget: number | null;
+  totalSpent: number;
+  transactionCount: number;
+  budgetProgressPercent: number | null;
+  overBudget: boolean;
 }
 
 // ── Icon list cho CategorySelector ──────────────────────────

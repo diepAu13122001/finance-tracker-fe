@@ -18,6 +18,7 @@ import {
 import { useCreateCategory, useUpdateCategory } from '@/hooks/useCategories'
 import { getErrorMessage } from '@/utils/errorUtils'
 import { type TransactionType } from '@/types/transaction'
+import { parseSmartVNDInput, formatVND } from '@/utils/format'
 
 const toPascalCase = (str: string): string =>
     str.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')
@@ -25,7 +26,9 @@ const toPascalCase = (str: string): string =>
 const categorySchema = z.object({
     name: z.string().min(1, 'Tên không được để trống').max(50, 'Tối đa 50 ký tự'),
     type: z.enum(['INCOME', 'EXPENSE', 'TRANSFER']),
+    monthlyBudget: z.string().optional(),
 })
+
 
 type CategoryFormData = z.infer<typeof categorySchema>
 
@@ -61,13 +64,13 @@ export const CategoryFormModal = ({
     const {
         register,
         handleSubmit,
-        watch,    // 👈 THÊM
-        setValue, // 👈 THÊM
+        watch,
+        setValue,
         reset,
         formState: { errors, isSubmitting },
     } = useForm<CategoryFormData>({
         resolver: zodResolver(categorySchema),
-        defaultValues: { type: defaultType },  // 👈 SỬA
+        defaultValues: { type: defaultType },
     })
 
     // 🔄 SỬA: dùng watch để biết type hiện tại
@@ -78,6 +81,9 @@ export const CategoryFormModal = ({
         reset({
             name: editingCategory?.name ?? '',
             type: editingCategory?.type ?? defaultType,
+            monthlyBudget: editingCategory?.monthlyBudget
+                ? editingCategory.monthlyBudget.toLocaleString('vi-VN')
+                : '',
         })
         setSelectedIcon(editingCategory?.icon ?? 'tag')
         setSelectedColor(editingCategory?.color ?? '#82b01e')
@@ -97,7 +103,10 @@ export const CategoryFormModal = ({
             type: data.type,
             icon: selectedIcon,
             color: selectedColor,
-            parentCategoryId: parentId,  // gửi kèm
+            parentCategoryId: parentId,
+            monthlyBudget: data.monthlyBudget && parseSmartVNDInput(data.monthlyBudget) > 0
+                ? parseSmartVNDInput(data.monthlyBudget)
+                : null,
         }
         try {
             if (isEditMode && editingCategory) {
@@ -195,6 +204,29 @@ export const CategoryFormModal = ({
                         error={errors.name?.message}
                         {...register('name')}
                     />
+
+                    {selectedType === 'EXPENSE' && (
+                        <div>
+                            <Input
+                                label="Ngân sách dự kiến/tháng (tùy chọn)"
+                                type="text"
+                                placeholder="2.000.000 hoặc bỏ trống"
+                                helperText="Dư sẽ cộng dồn sang tháng sau, lố sẽ bị trừ. Để trống = không theo dõi."
+                                {...register('monthlyBudget')}
+                                onBlur={(e) => {
+                                    const parsed = parseSmartVNDInput(e.target.value)
+                                    if (parsed > 0) {
+                                        setValue('monthlyBudget', parsed.toLocaleString('vi-VN'))
+                                    }
+                                }}
+                            />
+                            {watch('monthlyBudget') && parseSmartVNDInput(watch('monthlyBudget') ?? '') > 0 && (
+                                <p className="text-xs text-text-muted mt-1">
+                                    = {formatVND(parseSmartVNDInput(watch('monthlyBudget') ?? ''))}
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     {/* 🔄 SỬA: Icon picker — tối hơn khi chưa chọn (fix vấn đề 5) */}
                     <div>
