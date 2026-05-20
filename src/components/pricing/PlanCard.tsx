@@ -68,7 +68,7 @@ export const PlanCard = ({
                         <span className={`text-3xl font-bold ${isPremium ? 'text-amber-600' : 'text-primary-600'}`}>
                             {price.toLocaleString('vi-VN')}₫
                         </span>
-                        <span className={DS.muted}>/năm</span>
+                        <span className={DS.muted}>/tháng</span>
                     </>
                 )}
             </div>

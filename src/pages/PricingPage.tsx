@@ -59,7 +59,7 @@ const FEATURE_ROWS = [
     { label: 'Giao dịch/tháng', free: '50', plus: 'Không giới hạn', premium: 'Không giới hạn', highlight: true },
     { label: 'Danh mục chi tiêu', free: false, plus: true, premium: true },
     { label: 'Mục tiêu tài chính', free: false, plus: true, premium: true },
-    { label: 'Ngân sách', free: false, plus: true, premium: true },
+    { label: 'Ngân sách', free: true, plus: true, premium: true },
     { label: 'Xuất CSV', free: false, plus: true, premium: true },
     { label: 'Dark mode', free: false, plus: true, premium: true },
     { label: 'AI tin nhắn/tháng', free: 0, plus: '20 tin', premium: 'Không giới hạn', highlight: true },
@@ -82,14 +82,7 @@ const PricingPage = () => {
 
     // Tuần 4: thay bằng PayOS payment flow
     const handleUpgrade = async (planId: 'PLUS' | 'PREMIUM') => {
-        if (planId === 'PLUS') {
-            // PLUS đang miễn phí trong beta — chưa tích hợp PayOS
-            notify.success('Gói Plus miễn phí trong beta — liên hệ admin để kích hoạt')
-            return
-        }
 
-        // PREMIUM → tạo PayOS link, redirect sang trang thanh toán
-        setUpgrading(planId)
         try {
             const { checkoutUrl } = await paymentService.createPaymentLink(planId)
             // Redirect cứng — PayOS host trang thanh toán ngoài app
@@ -98,6 +91,7 @@ const PricingPage = () => {
             notify.error('Không tạo được link thanh toán, vui lòng thử lại')
             setUpgrading(null)
         }
+
     }
 
     return (
@@ -141,6 +135,7 @@ const PricingPage = () => {
                             {...card}
                             isCurrentPlan={plan === card.planId}
                             onUpgrade={() => {
+                                if (upgrading) return  // ← thêm guard này
                                 if (card.planId !== 'FREE') handleUpgrade(card.planId)
                             }}
                         />
