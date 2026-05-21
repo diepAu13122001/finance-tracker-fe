@@ -42,29 +42,48 @@ if (!isPlus) return <UpgradePrompt />;
 // Chỉ fetch API nếu Plus — tránh 403 → redirect loop
 ```
 
+### AI Insights — Lazy Load Pattern (Ngày 97)
+
+```tsx
+// Pattern: Không auto-fetch → tốn quota Gemini key
+// User bấm "Phân tích" → mới gọi API
+
+// Thành phần:
+// - aiService.analyzeSpending(year, month)
+//   gửi POST /api/ai/analyze-spending
+//   backend tự lấy summary + categories
+// - AIInsightsCard: loading skeleton, warnings, insights
+// - Reset khi year/month thay đổi
+```
+
 ### Cache Invalidation Strategy
 
 ```typescript
 // Sau mỗi transaction mutation: invalidate TẤT CẢ related queries
 const invalidateAll = (queryClient) => {
   queryClient.invalidateQueries({ queryKey: ["transactions"] });
-  queryClient.invalidateQueries({ queryKey: ["chart"] }); // pie, daily, monthly
-  queryClient.invalidateQueries({ queryKey: ["categories"] }); // totalAmount update
-  queryClient.invalidateQueries({ queryKey: ["goals"] }); // currentAmount update
+  queryClient.invalidateQueries({ queryKey: ["chart"] });
+  queryClient.invalidateQueries({ queryKey: ["categories"] });
+  queryClient.invalidateQueries({ queryKey: ["goals"] });
 };
-// Đảm bảo UI luôn consistent sau mọi mutation
+
+// Sau execute recurring (ngày 99): invalidate cả recurring lẫn transactions
+queryClient.invalidateQueries({ queryKey: ["recurring"] });
+queryClient.invalidateQueries({ queryKey: ["transactions"] });
 ```
 
-### Goal Progress — Recalculate Pattern
+### Recurring Transactions — Template Pattern (Ngày 99)
 
 ```
-Transaction create/update/delete
-     ↓ Backend
-     SELECT SUM(amount) WHERE goal_id = ?
-     SET goal.current_amount = result
-     Auto-complete / Auto-revert status
-     ↓ Frontend
-     invalidate ["goals"] → refetch → hiện data mới
+User tạo template → hệ thống lưu vào recurring_transactions
+Khi muốn ghi ngay → bấm "Ghi ngay" → execute() API
+  → BE tạo transaction thực + advance nextExecutionDate
+  → FE invalidate cả recurring (cập nhật ngày tiếp theo) và transactions (hiện giao dịch mới)
+
+Components:
+  RecurringCard       — hiển thị 1 recurring với actions
+  RecurringFormModal  — tạo/sửa, React Hook Form + Zod validation
+  RecurringPage       — danh sách active/inactive + plan gate
 ```
 
 ---
@@ -74,44 +93,54 @@ Transaction create/update/delete
 ```
 src/
 ├── components/
+│   ├── ai/           AIInsightsCard                     (ngày 97)
+│   ├── recurring/    RecurringCard, RecurringFormModal  (ngày 99)
 │   ├── shared/       Button, Input, Card, PlanGate, UpgradePrompt...
 │   ├── layout/       AppLayout, Sidebar, TopBar, BottomNav
 │   ├── transactions/ TransactionList, Modal, FilterTabs, Item
-│   ├── dashboard/    SummaryCards, TopGoalsWidget
+│   ├── dashboard/    SummaryCards, TopGoalsWidget, TopSpendingWidget
 │   ├── charts/       DailyBarChart, MonthlyTrendChart, CategoryPieChart
 │   ├── categories/   CategoryCard, CategorySelector, CategoryFormModal
-│   │                 CategoryTransactionsDrawer, CategoryBadge
-│   └── goals/        GoalCard, GoalProgressBar, GoalSelector
-│                     GoalFormModal, FreedomNumberCalculator
+│   └── wallets/      WalletCard, WalletFormModal, WalletSelector
 ├── pages/
-│   Dashboard, ExpensesPage, AnalyticsPage, CategoriesPage,
-│   GoalsPage, SettingsPage, PricingPage, LoginPage, RegisterPage
+│   Dashboard, ExpensesPage, AnalyticsPage (+ AI Insights),
+│   CategoriesPage, WalletsPage, RecurringPage (ngày 99),
+│   SettingsPage, PricingPage, LoginPage, RegisterPage,
+│   PaymentSuccessPage, PaymentCancelPage
 ├── hooks/
-│   useTransactions, useCategories, useGoals, useCharts, usePlan
+│   useTransactions, useCategories, useWallets,
+│   useRecurring (ngày 99), useCharts, usePlan
 ├── services/
-│   transactionService, categoryService, goalService, chartService
+│   transactionService, categoryService, walletService,
+│   recurringService (ngày 99), aiService (ngày 96-97),
+│   chartService, exportService, paymentService
 ├── types/
-│   transaction.ts, category.ts, goal.ts, plans.ts
+│   transaction.ts, category.ts, wallet.ts,
+│   recurring.ts (ngày 99), plans.ts
 └── utils/
     format.ts, errorUtils.ts
 ```
 
 ---
 
-## Features V1 → V2
+## Features V1 → V2.3
 
-| Feature                   | V1 (Free)   | V2 Plus           |
-| ------------------------- | ----------- | ----------------- |
-| Transactions CRUD         | ✅ 50/tháng | ✅ Không giới hạn |
-| Summary dashboard         | ✅          | ✅                |
-| Biểu đồ cơ bản            | ✅          | ✅                |
-| Categories                | ❌          | ✅ V2.1           |
-| Pie chart theo category   | ❌          | ✅ V2.1           |
-| Financial Goals           | ❌          | ✅ V2.2           |
-| Goal progress tracking    | ❌          | ✅ V2.2           |
-| Freedom Number Calculator | ❌          | ✅ V2.2           |
-| AI Assistant              | ❌          | 🚧 V2.3           |
-| PayOS Payment             | ❌          | 🚧 V2.3           |
+| Feature                        | Free   | Plus              | Ngày   |
+| ------------------------------ | ------ | ----------------- | ------ |
+| Transactions CRUD              | 50/th  | Không giới hạn | V1     |
+| Summary dashboard              | ✅      | ✅                | V1     |
+| Biểu đồ cơ bản              | ✅      | ✅                | V1     |
+| Wallet management              | 5 ví   | Không giới hạn | V2.3   |
+| Transfer giữa ví             | ✅      | ✅                | V2.3   |
+| Export Excel                   | ✅      | ✅                | V2.3   |
+| Categories 2-level             | ❌      | ✅                | V2.1   |
+| Category budget + rollover     | ✅      | ✅                | V2.1   |
+| Pie chart theo category        | ❌      | ✅                | V2.1   |
+| Financial Goals                | ❌      | ✅                | V2.2   |
+| AI parse transaction (Gemini)  | ❌      | ✅                | ngày 96|
+| **AI spending analysis**       | ❌      | ✅                | **97** |
+| **Recurring Transactions**     | ❌      | ✅                | **99** |
+| PayOS Payment                  | ❌      | ✅                | ngày 94|
 
 ---
 
@@ -132,9 +161,11 @@ npm run dev
 npm run test:run
 
 # Test files:
-# format.test.ts    — 12 cases
-# usePlan.test.ts   — 10 cases
-# PlanGate.test.tsx — 8 cases
+# format.test.ts          — 12 cases
+# usePlan.test.ts         — 10 cases
+# PlanGate.test.tsx       —  8 cases
+# aiService.test.ts       —  5 cases  (ngày 101)
+# useRecurring.test.ts    —  4 cases  (ngày 101)
 ```
 
 ---
@@ -143,8 +174,8 @@ npm run test:run
 
 ```
 Desktop (≥768px): Sidebar navigation
-Mobile  (<768px): Bottom nav (5 items: Home, Household, Analytics⭐, Goals, AI)
-                  Hidden pages (Categories, Settings, Expenses):
+Mobile  (<768px): Bottom nav (5 items: Home, Nguồn tiền, Analytics⭐, Goals, AI)
+                  Hidden pages (Categories, Settings, Expenses, Recurring):
                   → Accessible từ Dashboard quick nav
                   → Back button ← Home trên mobile header
 ```
