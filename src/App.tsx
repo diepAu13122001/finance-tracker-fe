@@ -8,18 +8,19 @@ import { useAuthStore } from '@/stores/authStore'
 import { useQueryClient } from '@tanstack/react-query'
 import { notify } from '@/lib/toast'
 
-const Dashboard = lazy(() => import('@/pages/Dashboard'))
-const LoginPage = lazy(() => import('@/pages/LoginPage'))
-const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
-const PricingPage = lazy(() => import('@/pages/PricingPage'))
-const DevKit = lazy(() => import('@/pages/DevKit'))
-const ExpensesPage = lazy(() => import('@/pages/ExpensesPage'))
-const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'))
-const SettingPsage = lazy(() => import('@/pages/SettingsPage'))
-const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'))
-const WalletsPage = lazy(() => import('@/pages/WalletsPage'))
+const Dashboard          = lazy(() => import('@/pages/Dashboard'))
+const LoginPage          = lazy(() => import('@/pages/LoginPage'))
+const RegisterPage       = lazy(() => import('@/pages/RegisterPage'))
+const PricingPage        = lazy(() => import('@/pages/PricingPage'))
+const DevKit             = lazy(() => import('@/pages/DevKit'))
+const ExpensesPage       = lazy(() => import('@/pages/ExpensesPage'))
+const AnalyticsPage      = lazy(() => import('@/pages/AnalyticsPage'))
+const SettingsPage       = lazy(() => import('@/pages/SettingsPage'))
+const CategoriesPage     = lazy(() => import('@/pages/CategoriesPage'))
+const WalletsPage        = lazy(() => import('@/pages/WalletsPage'))
+const RecurringPage      = lazy(() => import('@/pages/RecurringPage'))
 const PaymentSuccessPage = lazy(() => import('@/pages/PaymentSuccessPage'))
-const PaymentCancelPage = lazy(() => import('@/pages/PaymentCancelPage'))
+const PaymentCancelPage  = lazy(() => import('@/pages/PaymentCancelPage'))
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="p-8">
@@ -30,12 +31,7 @@ const PlaceholderPage = ({ title }: { title: string }) => (
 
 /**
  * Hook theo dõi token expiry.
- *
- * Vấn đề #6: Sau một khoảng thời gian không focus vào tab, JWT hết hạn (15 phút)
- * nhưng PrivateRoute không re-check vì không re-render.
- *
- * Fix: check token mỗi 60s và khi window focus lại.
- * Nếu expired → logout + redirect → tránh tình trạng "app im lặng không hiển thị data".
+ * Check mỗi 60s và khi window focus lại → logout + redirect nếu hết hạn.
  */
 function useTokenExpiryWatcher() {
   const logout = useAuthStore(s => s.logout)
@@ -44,53 +40,39 @@ function useTokenExpiryWatcher() {
   useEffect(() => {
     const checkTokenExpiry = () => {
       const token = useAuthStore.getState().token
-      if (!token) return // chưa đăng nhập → không cần check
+      if (!token) return
 
       try {
         const payload = JSON.parse(atob(token.split('.')[1]))
-        const isExpired = payload.exp * 1000 < Date.now()
-
-        if (isExpired) {
-          // Token đã hết hạn → logout sạch
+        if (payload.exp * 1000 < Date.now()) {
           logout(queryClient)
           notify.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
-          // Redirect về login
           window.location.href = '/login'
         }
       } catch {
-        // Token corrupt → logout
         logout(queryClient)
         window.location.href = '/login'
       }
     }
 
-    // Check ngay lúc mount
     checkTokenExpiry()
-
-    // Check mỗi phút (phòng trường hợp tab active liên tục)
     const interval = setInterval(checkTokenExpiry, 60 * 1000)
-
-    // Check khi user quay lại tab (document.visibilitychange + window.focus)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        checkTokenExpiry()
-      }
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') checkTokenExpiry()
     }
     const handleFocus = () => checkTokenExpiry()
 
-    document.addEventListener('visibilitychange', handleVisibilityChange)
+    document.addEventListener('visibilitychange', handleVisibility)
     window.addEventListener('focus', handleFocus)
-
     return () => {
       clearInterval(interval)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('focus', handleFocus)
     }
   }, [logout, queryClient])
 }
 
 function App() {
-  // Fix #6: Watch token expiry
   useTokenExpiryWatcher()
 
   return (
@@ -99,11 +81,9 @@ function App() {
         position="top-right"
         toastOptions={{
           duration: 3000,
-          style: {
-            animation: 'toastEnter 0.3s ease forwards',
-          },
+          style: { animation: 'toastEnter 0.3s ease forwards' },
           success: { iconTheme: { primary: '#22c55e', secondary: '#fff' } },
-          error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+          error:   { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
         }}
       />
       <Suspense
@@ -115,23 +95,24 @@ function App() {
       >
         <Routes>
           {/* Public routes */}
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login"    element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/pricing"  element={<PricingPage />} />
 
-          {/* Private routes — bọc trong AppLayout */}
+          {/* Private routes */}
           <Route element={<PrivateRoute />}>
             <Route element={<AppLayout />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/expenses" element={<ExpensesPage />} />
+              <Route path="/"          element={<Dashboard />} />
+              <Route path="/expenses"  element={<ExpensesPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/categories" element={<CategoriesPage />} />
-              <Route path="/wallets" element={<WalletsPage />} />
-              <Route path="/ai" element={<PlaceholderPage title="🤖 AI Assistant" />} />
+              <Route path="/wallets"   element={<WalletsPage />} />
+              <Route path="/recurring" element={<RecurringPage />} />
+              <Route path="/ai"        element={<PlaceholderPage title="🤖 AI Assistant" />} />
               <Route path="/household" element={<PlaceholderPage title="🏠 Đồ dùng" />} />
-              <Route path="/settings" element={<SettingPsage />} />
+              <Route path="/settings"  element={<SettingsPage />} />
               <Route path="/payment/success" element={<PaymentSuccessPage />} />
-              <Route path="/payment/cancel" element={<PaymentCancelPage />} />
+              <Route path="/payment/cancel"  element={<PaymentCancelPage />} />
             </Route>
           </Route>
 
