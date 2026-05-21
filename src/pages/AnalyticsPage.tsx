@@ -3,6 +3,7 @@ import { DS } from '@/lib/design-system'
 import { DailyBarChart } from '@/components/charts/DailyBarChart'
 import { MonthlyTrendChart } from '@/components/charts/MonthlyTrendChart'
 import { CategoryPieChart } from '@/components/charts/CategoryPieChart'
+import { AIInsightsCard } from '@/components/ai/AIInsightsCard'
 import { PlanGate } from '@/components/shared/PlanGate'
 import { useCategoryChart } from '@/hooks/useCharts'
 import { usePlan } from '@/hooks/usePlan'
@@ -49,13 +50,16 @@ const AnalyticsPage = () => {
     const [trendYear, setTrendYear] = useState(now.getFullYear())
 
     // ── Pie chart filters ────────────────────────────────────────────────────
-    const [pieMode, setPieMode] = useState<PieFilterMode>('month')  // 👈 THÊM
+    const [pieMode, setPieMode] = useState<PieFilterMode>('month')
     const [pieYear, setPieYear] = useState(now.getFullYear())
     const [pieMonth, setPieMonth] = useState(now.getMonth() + 1)
     const [pieQuarter, setPieQuarter] = useState(Math.ceil((now.getMonth() + 1) / 3))
     const [pieType, setPieType] = useState<'EXPENSE' | 'INCOME'>('EXPENSE')
 
-    // Build params cho pie chart theo mode
+    // ── AI Insights filters ──────────────────────────────────────────────────
+    const [aiYear, setAiYear] = useState(now.getFullYear())
+    const [aiMonth, setAiMonth] = useState(now.getMonth() + 1)
+
     const pieCategoryParams = (() => {
         const base = { type: pieType, year: pieYear } as const
         if (pieMode === 'month') return { ...base, month: pieMonth }
@@ -63,7 +67,7 @@ const AnalyticsPage = () => {
             const q = QUARTERS.find(q => q.value === pieQuarter)!
             return { ...base, startMonth: q.startMonth, endMonth: q.endMonth }
         }
-        return base // year mode — no month/startMonth/endMonth
+        return base
     })()
 
     const { data: categoryChartData, isLoading: isLoadingPie } =
@@ -139,11 +143,7 @@ const AnalyticsPage = () => {
                     <h2 className={DS.heading2}>Phân bổ theo danh mục</h2>
                     <p className={DS.muted}>Chi tiết từng danh mục</p>
                 </div>
-
-                {/* Filter row 1: type */}
                 <div className="flex flex-wrap items-center gap-2">
-
-                    {/* EXPENSE/INCOME toggle */}
                     <div className="flex p-1 bg-surface-muted rounded-lg">
                         {([{ key: 'EXPENSE', label: 'Chi tiêu' }, { key: 'INCOME', label: 'Thu nhập' }] as { key: 'EXPENSE' | 'INCOME'; label: string }[]).map(tab => (
                             <button key={tab.key} onClick={() => setPieType(tab.key)}
@@ -154,49 +154,51 @@ const AnalyticsPage = () => {
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    {/* Month/Quarter/Year mode */}
                     <div className="flex p-1 bg-surface-muted rounded-lg">
-                        {([
-                            { key: 'month', label: 'Tháng' },
-                            { key: 'quarter', label: 'Quý' },
-                            { key: 'year', label: 'Năm' },
-                        ] as { key: PieFilterMode; label: string }[]).map(tab => (
+                        {([{ key: 'month', label: 'Tháng' }, { key: 'quarter', label: 'Quý' }, { key: 'year', label: 'Năm' }] as { key: PieFilterMode; label: string }[]).map(tab => (
                             <button key={tab.key} onClick={() => setPieMode(tab.key)}
                                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${pieMode === tab.key ? 'bg-white text-text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}>
                                 {tab.label}
                             </button>
                         ))}
                     </div>
-
-                    {/* Năm */}
                     <select value={pieYear} onChange={e => setPieYear(Number(e.target.value))} className={`${DS.inputBase} w-24`}>
                         {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
-
-                    {/* Tháng — chỉ hiện khi mode = month */}
                     {pieMode === 'month' && (
                         <select value={pieMonth} onChange={e => setPieMonth(Number(e.target.value))} className={`${DS.inputBase} w-28`}>
                             {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
                         </select>
                     )}
-
-                    {/* Quý — chỉ hiện khi mode = quarter */}
                     {pieMode === 'quarter' && (
                         <select value={pieQuarter} onChange={e => setPieQuarter(Number(e.target.value))} className={`${DS.inputBase} w-40`}>
                             {QUARTERS.map(q => <option key={q.value} value={q.value}>{q.label}</option>)}
                         </select>
                     )}
                 </div>
-
                 <CategoryPieChart
                     data={categoryChartData ?? []}
-                    title={
-                        pieType === 'EXPENSE'
-                            ? 'Phân bổ chi tiêu theo danh mục'
-                            : 'Phân bổ thu nhập theo danh mục'
-                    }
+                    title={pieType === 'EXPENSE' ? 'Phân bổ chi tiêu theo danh mục' : 'Phân bổ thu nhập theo danh mục'}
                     isLoading={isLoadingPie}
                 />
+            </div>
+
+            {/* ── AI Insights ─────────────────────────────────────────── */}
+            <div className="flex flex-col gap-3">
+                <div>
+                    <h2 className={DS.heading2}>AI Insights</h2>
+                    <p className={DS.muted}>Phân tích chi tiêu bằng Gemini AI</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className={DS.label}>Tháng:</span>
+                    <select value={aiMonth} onChange={e => { setAiMonth(Number(e.target.value)) }} className={`${DS.inputBase} w-28`}>
+                        {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                    </select>
+                    <select value={aiYear} onChange={e => { setAiYear(Number(e.target.value)) }} className={`${DS.inputBase} w-24`}>
+                        {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                </div>
+                <AIInsightsCard year={aiYear} month={aiMonth} />
             </div>
 
         </div>
