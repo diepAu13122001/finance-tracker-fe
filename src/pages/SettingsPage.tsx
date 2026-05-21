@@ -37,6 +37,57 @@ const passwordSchema = z.object({
 type ProfileForm = z.infer<typeof profileSchema>
 type PasswordForm = z.infer<typeof passwordSchema>
 
+
+// ── Component riêng để quản lý state API key đúng cách ──
+const GeminiKeyInput = () => {
+    const [keyValue, setKeyValue] = useState(
+        () => localStorage.getItem('gemini_api_key') ?? ''
+    )
+    const [saved, setSaved] = useState(false)
+
+    const handleSave = () => {
+        localStorage.setItem('gemini_api_key', keyValue)
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+    }
+
+    return (
+        <div className="flex flex-col gap-3">
+            {/* Dùng div thay form để tránh lỗi "Password field not in form" */}
+            <div className="flex flex-col gap-1.5">
+                <label className={DS.label}>
+                    Gemini API Key
+                </label>
+                {/* type="text" thay vì "password" để user kiểm tra key đã nhập */}
+                <input
+                    type="text"
+                    value={keyValue}
+                    onChange={e => setKeyValue(e.target.value)}
+                    placeholder="AIzaSy..."
+                    className={DS.inputBase}
+                    autoComplete="off"
+                />
+                <p className={DS.muted}>
+                    Lưu trên thiết bị, không gửi lên server.
+                </p>
+            </div>
+            <Button
+                type="button"
+                onClick={handleSave}
+                className="w-fit"
+                variant={saved ? 'ghost' : 'primary'}
+            >
+                {saved ? '✓ Đã lưu' : 'Lưu API key'}
+            </Button>
+            {keyValue && (
+                <p className="text-xs text-text-muted font-mono break-all bg-surface-muted rounded-lg px-3 py-2">
+                    {keyValue.slice(0, 8)}...{keyValue.slice(-4)}
+                </p>
+            )}
+        </div>
+    )
+}
+
 const SettingsPage = () => {
     const [activeTab, setActiveTab] = useState<Tab>('profile')
     const navigate = useNavigate()
@@ -245,10 +296,7 @@ const SettingsPage = () => {
                             </p>
                         </div>
                     ) : (
-                        <Input label="Gemini API Key" type="password" placeholder="AIzaSy..."
-                            helperText="Lưu trên thiết bị, không gửi lên server"
-                            value={localStorage.getItem('gemini_api_key') ?? ''}
-                            onChange={e => localStorage.setItem('gemini_api_key', e.target.value)} />
+                        <GeminiKeyInput />
                     )}
                 </div>
             )}

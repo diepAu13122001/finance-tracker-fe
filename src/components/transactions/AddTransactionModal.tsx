@@ -15,6 +15,8 @@ import { animations } from '@/lib/animations'
 import { CategorySelector } from '@/components/categories/CategorySelector'
 import { PlanGate } from '@/components/shared/PlanGate'
 import { WalletSelector } from '../wallets/WalletSelector'
+import { AIParseInput } from './AIParseInput'
+import type { AIParseResult } from '@/services/aiService'
 
 const transactionSchema = z.object({
     type: z.enum(['INCOME', 'EXPENSE', 'TRANSFER']),
@@ -168,6 +170,15 @@ export const AddTransactionModal = ({
 
     const isTransfer = selectedType === 'TRANSFER'
 
+    const handleAIParsed = (result: AIParseResult) => {
+        // Điền form từ kết quả AI
+        setValue('type', result.type as TransactionType)
+        setValue('amount', result.amount.toLocaleString('vi-VN'))
+        if (result.note) setValue('note', result.note)
+        // Gợi ý category — user tự chọn, không auto-set để tránh sai
+    }
+
+
     return (
         <div
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
@@ -230,6 +241,9 @@ export const AddTransactionModal = ({
                         ))}
                     </div>
 
+                    {/* AI */}
+                    <AIParseInput onParsed={handleAIParsed} />
+                    
                     {/* Amount */}
                     <div>
                         <Input
