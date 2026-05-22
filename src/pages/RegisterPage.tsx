@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/shared/Button'
 import { Input } from '@/components/shared/Input'
+import { PasswordInput } from '@/components/shared/PasswordInput'  // 👈 THÊM
 import { DS } from '@/lib/design-system'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
@@ -34,12 +35,11 @@ const registerSchema = z
             .string()
             .min(1, 'Vui lòng xác nhận mật khẩu'),
     })
-    // Kiểm tra 2 password khớp nhau — refine chạy sau khi validate từng field
     .refine(
         (data) => data.password === data.confirmPassword,
         {
             message: 'Mật khẩu xác nhận không khớp',
-            path: ['confirmPassword'], // lỗi hiện ở field confirmPassword
+            path: ['confirmPassword'],
         }
     )
 
@@ -69,7 +69,6 @@ const RegisterPage = () => {
 
     const onSubmit = async (data: RegisterFormData) => {
         setServerError(null)
-
         try {
             const response = await authService.register({
                 firstName: data.firstName,
@@ -77,8 +76,6 @@ const RegisterPage = () => {
                 email: data.email,
                 password: data.password,
             })
-
-            // Lưu vào store — usePlan tự động cập nhật theo
             setAuth(
                 {
                     email: response.email,
@@ -87,7 +84,6 @@ const RegisterPage = () => {
                 },
                 response.token
             )
-
             navigate('/')
         } catch (error: any) {
             const message = error.response?.data?.message ?? 'Đăng ký thất bại, vui lòng thử lại'
@@ -144,9 +140,16 @@ const RegisterPage = () => {
                             {...register('email')}
                         />
 
-                        <Input
+                        {/*
+                         * 👇 SỬA: Dùng PasswordInput cho cả 2 ô password
+                         * 
+                         * Lý do 2 ô password dùng state toggle riêng biệt:
+                         * → Khi user bật xem password chính, confirmPassword vẫn ẩn
+                         * → User có thể so sánh dễ hơn: bật 1 ô rồi đối chiếu bằng mắt
+                         * → Đây là UX tốt hơn là dùng 1 toggle chung cho cả 2
+                         */}
+                        <PasswordInput
                             label="Mật khẩu"
-                            type="password"
                             placeholder="••••••••"
                             helperText="Ít nhất 8 ký tự"
                             error={errors.password?.message}
@@ -154,9 +157,8 @@ const RegisterPage = () => {
                             {...register('password')}
                         />
 
-                        <Input
+                        <PasswordInput
                             label="Xác nhận mật khẩu"
-                            type="password"
                             placeholder="••••••••"
                             error={errors.confirmPassword?.message}
                             required

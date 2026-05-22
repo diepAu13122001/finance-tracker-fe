@@ -6,6 +6,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { DS } from '@/lib/design-system'
 import { Button } from '@/components/shared/Button'
 import { Input } from '@/components/shared/Input'
+import { PasswordInput } from '@/components/shared/PasswordInput'  // 👈 THÊM
 import { useAuthStore } from '@/stores/authStore'
 import { usePlan } from '@/hooks/usePlan'
 import { api } from '@/lib/api'
@@ -37,8 +38,18 @@ const passwordSchema = z.object({
 type ProfileForm = z.infer<typeof profileSchema>
 type PasswordForm = z.infer<typeof passwordSchema>
 
-
-// ── Component riêng để quản lý state API key đúng cách ──
+// ─── GeminiKeyInput ───────────────────────────────────────────────────────────
+/**
+ * Component nhập Gemini API key.
+ *
+ * Thay đổi so với trước:
+ * - Dùng PasswordInput (type="password" mặc định + nút mắt toggle)
+ *   → Key được ẩn khi chưa xem, tránh người ngồi cạnh nhìn thấy
+ *   → Có thể bật xem để kiểm tra key trước khi lưu
+ *
+ * Key lưu localStorage phía client — KHÔNG gửi lên server.
+ * Khi user bật xem: hiện full key (vì họ đang tự xem key của mình).
+ */
 const GeminiKeyInput = () => {
     const [keyValue, setKeyValue] = useState(
         () => localStorage.getItem('gemini_api_key') ?? ''
@@ -46,47 +57,79 @@ const GeminiKeyInput = () => {
     const [saved, setSaved] = useState(false)
 
     const handleSave = () => {
-        localStorage.setItem('gemini_api_key', keyValue)
+        const trimmed = keyValue.trim()
+        if (!trimmed) {
+            localStorage.removeItem('gemini_api_key')
+        } else {
+            localStorage.setItem('gemini_api_key', trimmed)
+        }
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)
     }
 
+    // Prefix hiển thị khi key đã được lưu — mask bớt để không lộ full key khi UI render
+    // Chỉ hiện khi input đang ở chế độ password (chưa bật mắt)
+    const maskedPreview = keyValue
+        ? `${keyValue.slice(0, 8)}...${keyValue.slice(-4)}`
+        : null
+
     return (
         <div className="flex flex-col gap-3">
-            {/* Dùng div thay form để tránh lỗi "Password field not in form" */}
-            <div className="flex flex-col gap-1.5">
-                <label className={DS.label}>
-                    Gemini API Key
-                </label>
-                {/* type="text" thay vì "password" để user kiểm tra key đã nhập */}
-                <input
-                    type="text"
-                    value={keyValue}
-                    onChange={e => setKeyValue(e.target.value)}
-                    placeholder="AIzaSy..."
-                    className={DS.inputBase}
-                    autoComplete="off"
-                />
-                <p className={DS.muted}>
-                    Lưu trên thiết bị, không gửi lên server.
-                </p>
+            {/*
+             * 👇 SỬA: Dùng PasswordInput thay input type="text"
+             *
+             * Trước: type="text" → key lộ ra màn hình ngay lập tức
+             * Sau:   type="password" + toggle mắt → ẩn mặc định, bật khi cần xem
+             *
+             * Không dùng React Hook Form ở đây vì key không phải form data của page,
+             * chỉ là local state đọc/ghi localStorage.
+             */}
+            <PasswordInput
+                label="Gemini API Key"
+                value={keyValue}
+                onChange={e => { setKeyValue(e.target.value); setSaved(false) }}
+                placeholder="AIzaSy..."
+                autoComplete="off"
+                helperText="Lưu trên thiết bị, không gửi lên server."
+            />
+
+            <div className="flex items-center gap-3">
+                <Button
+                    type="button"
+                    onClick={handleSave}
+                    className="w-fit"
+                    variant={saved ? 'ghost' : 'primary'}
+                >
+                    {saved ? '✓ Đã lưu' : 'Lưu API key'}
+                </Button>
+
+                {/* Xóa key */}
+                {keyValue && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setKeyValue('')
+                            localStorage.removeItem('gemini_api_key')
+                            setSaved(false)
+                        }}
+                        className="text-xs text-danger-500 hover:text-danger-700 underline"
+                    >
+                        Xóa key
+                    </button>
+                )}
             </div>
-            <Button
-                type="button"
-                onClick={handleSave}
-                className="w-fit"
-                variant={saved ? 'ghost' : 'primary'}
-            >
-                {saved ? '✓ Đã lưu' : 'Lưu API key'}
-            </Button>
+
+            {/* Preview key đã lưu (masked) — chỉ hiện khi có key */}
             {keyValue && (
                 <p className="text-xs text-text-muted font-mono break-all bg-surface-muted rounded-lg px-3 py-2">
-                    {keyValue.slice(0, 8)}...{keyValue.slice(-4)}
+                    Đang dùng: {maskedPreview}
                 </p>
             )}
         </div>
     )
 }
+
+// ─── SettingsPage ─────────────────────────────────────────────────────────────
 
 const SettingsPage = () => {
     const [activeTab, setActiveTab] = useState<Tab>('profile')
@@ -114,7 +157,6 @@ const SettingsPage = () => {
         mutationFn: (data: ProfileForm) => api.put('/api/users/me', data),
         onSuccess: (res) => {
             if (user) setAuth({ ...user, firstName: res.data.firstName }, localStorage.getItem('token')!)
-            // Invalidate categories vì rollover phụ thuộc monthStartDay
             queryClient.invalidateQueries({ queryKey: ['user', 'profile'] })
             queryClient.invalidateQueries({ queryKey: ['categories'] })
             queryClient.invalidateQueries({ queryKey: ['transactions'] })
@@ -185,7 +227,6 @@ const SettingsPage = () => {
                         <Input label="Email" value={profile?.email ?? ''} disabled
                             helperText="Email không thể thay đổi" />
 
-                        {/* ── FIX LỖI #2: chọn ngày bắt đầu tháng ── */}
                         <div className="flex flex-col gap-1.5">
                             <label className={DS.label}>
                                 Ngày bắt đầu tháng mới
@@ -202,14 +243,7 @@ const SettingsPage = () => {
                             </select>
                             <p className={DS.muted}>
                                 Ngân sách sẽ reset vào ngày này hàng tháng.
-                                VD: chọn <strong>5</strong> → tháng tính từ ngày 5 → ngày 4 tháng sau.
-                                Phù hợp với chu kỳ lương của bạn.
                             </p>
-                            {profileForm.formState.errors.monthStartDay && (
-                                <p className="text-xs text-danger-500">
-                                    {profileForm.formState.errors.monthStartDay.message}
-                                </p>
-                            )}
                         </div>
 
                         <Button type="submit" loading={updateProfileMutation.isPending} className="w-fit">
@@ -227,16 +261,30 @@ const SettingsPage = () => {
                         onSubmit={passwordForm.handleSubmit(d => changePasswordMutation.mutate(d))}
                         className="flex flex-col gap-4" noValidate
                     >
-                        <Input label="Mật khẩu hiện tại" type="password" placeholder="••••••••"
+                        {/*
+                         * 👇 SỬA: Tất cả 3 ô password dùng PasswordInput
+                         * → User có thể kiểm tra từng ô trước khi submit
+                         * → Đặc biệt hữu ích cho ô "Mật khẩu mới" và "Xác nhận"
+                         */}
+                        <PasswordInput
+                            label="Mật khẩu hiện tại"
+                            placeholder="••••••••"
                             error={passwordForm.formState.errors.currentPassword?.message}
-                            {...passwordForm.register('currentPassword')} />
-                        <Input label="Mật khẩu mới" type="password" placeholder="••••••••"
+                            {...passwordForm.register('currentPassword')}
+                        />
+                        <PasswordInput
+                            label="Mật khẩu mới"
+                            placeholder="••••••••"
                             helperText="Ít nhất 8 ký tự"
                             error={passwordForm.formState.errors.newPassword?.message}
-                            {...passwordForm.register('newPassword')} />
-                        <Input label="Xác nhận mật khẩu mới" type="password" placeholder="••••••••"
+                            {...passwordForm.register('newPassword')}
+                        />
+                        <PasswordInput
+                            label="Xác nhận mật khẩu mới"
+                            placeholder="••••••••"
                             error={passwordForm.formState.errors.confirmPassword?.message}
-                            {...passwordForm.register('confirmPassword')} />
+                            {...passwordForm.register('confirmPassword')}
+                        />
                         <Button type="submit" loading={changePasswordMutation.isPending} className="w-fit">
                             Đổi mật khẩu
                         </Button>
@@ -276,7 +324,7 @@ const SettingsPage = () => {
                 </div>
             )}
 
-            {/* ── Tab: AI ── (giữ nguyên) */}
+            {/* ── Tab: AI ── */}
             {activeTab === 'ai' && (
                 <div className={DS.card}>
                     <h2 className={`${DS.heading2} mb-2`}>Gemini AI Key</h2>

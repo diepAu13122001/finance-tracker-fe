@@ -8,10 +8,16 @@ import type {
 import { notify, TOAST_MESSAGES } from "@/lib/toast";
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
+
 export const TRANSACTION_KEYS = {
   all: ["transactions"] as const,
-  list: (page: number, filter: FilterType, categoryId?: string) =>
-    ["transactions", "list", page, filter, categoryId] as const,
+  // 👇 THÊM: search vào cache key để query cache riêng khi search
+  list: (
+    page: number,
+    filter: FilterType,
+    categoryId?: string,
+    search?: string,
+  ) => ["transactions", "list", page, filter, categoryId, search] as const,
   summary: (params: SummaryParams) =>
     ["transactions", "summary", params] as const,
 };
@@ -25,14 +31,21 @@ const invalidateAll = (queryClient: ReturnType<typeof useQueryClient>) => {
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
+/**
+ * Hook lấy danh sách transactions.
+ *
+ * @param search  text tìm kiếm (trong note + tên ví) — debounced ở component
+ */
 export const useTransactions = (
   page = 0,
   filter: FilterType = "ALL",
   categoryId?: string,
+  search?: string, // 👈 THÊM
 ) => {
   return useQuery({
-    queryKey: TRANSACTION_KEYS.list(page, filter, categoryId),
-    queryFn: () => transactionService.getAll(page, 20, filter, categoryId),
+    queryKey: TRANSACTION_KEYS.list(page, filter, categoryId, search),
+    queryFn: () =>
+      transactionService.getAll(page, 20, filter, categoryId, search),
   });
 };
 

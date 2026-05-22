@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/shared/Button'
 import { Input } from '@/components/shared/Input'
+import { PasswordInput } from '@/components/shared/PasswordInput'  // 👈 THÊM
 import { DS } from '@/lib/design-system'
 import { authService } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
@@ -22,7 +23,6 @@ const loginSchema = z.object({
         .min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
 })
 
-// Tự động suy ra TypeScript type từ schema
 type LoginFormData = z.infer<typeof loginSchema>
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -44,14 +44,10 @@ const LoginPage = () => {
         },
     })
 
-    // ── Submit handler ──────────────────────────────────────────────────────────
     const onSubmit = async (data: LoginFormData) => {
         setServerError(null)
-
         try {
             const response = await authService.login(data)
-
-            // Lưu token vào authStore
             setAuth(
                 {
                     email: response.email,
@@ -67,12 +63,11 @@ const LoginPage = () => {
         }
     }
 
-    // ── Render ──────────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-surface-muted flex items-center justify-center p-4">
             <div className="w-full max-w-md">
 
-                {/* Logo / Tiêu đề */}
+                {/* Logo */}
                 <div className="text-center mb-8">
                     <h1 className={`${DS.heading1} mb-2`}>💰 Finance Tracker</h1>
                     <p className={DS.muted}>Đăng nhập để tiếp tục</p>
@@ -90,7 +85,6 @@ const LoginPage = () => {
                         </div>
                     )}
 
-                    {/* Form */}
                     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
 
                         <Input
@@ -101,9 +95,13 @@ const LoginPage = () => {
                             {...register('email')}
                         />
 
-                        <Input
+                        {/*
+                         * 👇 SỬA: Dùng PasswordInput thay Input type="password"
+                         * → Có nút mắt để bật/tắt hiển thị mật khẩu
+                         * → Giúp user kiểm tra trước khi submit, tránh nhập sai
+                         */}
+                        <PasswordInput
                             label="Mật khẩu"
-                            type="password"
                             placeholder="••••••••"
                             error={errors.password?.message}
                             {...register('password')}

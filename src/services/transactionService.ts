@@ -28,29 +28,31 @@ export const transactionService = {
   },
 
   /**
-   * Lấy tất cả giao dịch của user (main list).
-   * Tự động loại bỏ transfer_in (backend xử lý), chỉ hiện transfer_out.
+   * Lấy danh sách giao dịch.
+   *
+   * @param search  text tìm kiếm (optional) — backend tìm trong note + tên ví
+   *                Truyền undefined hoặc "" → không search, lấy theo filter bình thường
    */
   getAll: async (
     page = 0,
     size = 20,
     filter: FilterType = "ALL",
     categoryId?: string,
+    search?: string, // 👈 THÊM
   ): Promise<TransactionPage> => {
     const params: Record<string, unknown> = { page, size };
+
     if (filter !== "ALL") params.type = filter;
     if (categoryId) params.categoryId = categoryId;
+    // Chỉ gửi search nếu có nội dung (tránh gửi param rỗng lên server)
+    if (search?.trim()) params.search = search.trim();
+
     const response = await api.get<TransactionPage>("/api/transactions", {
       params,
     });
     return response.data;
   },
 
-  /**
-   * Lấy tất cả giao dịch của một wallet cụ thể.
-   * Bao gồm cả transfer_in và transfer_out của ví đó.
-   * Dùng trong WalletTransactionsDrawer.
-   */
   getAllByWallet: async (
     walletId: string,
     page = 0,
