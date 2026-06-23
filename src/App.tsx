@@ -20,6 +20,8 @@ const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'))
 const WalletsPage = lazy(() => import('@/pages/WalletsPage'))
 const PaymentSuccessPage = lazy(() => import('@/pages/PaymentSuccessPage'))
 const PaymentCancelPage = lazy(() => import('@/pages/PaymentCancelPage'))
+const HouseholdPage = lazy(() => import('@/pages/HouseholdPage'))
+const HouseholdItemDetailPage = lazy(() => import('@/pages/HouseholdItemDetailPage'))
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="p-8">
@@ -128,7 +130,8 @@ function App() {
               <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/wallets" element={<WalletsPage />} />
               <Route path="/ai" element={<PlaceholderPage title="🤖 AI Assistant" />} />
-              <Route path="/household" element={<PlaceholderPage title="🏠 Đồ dùng" />} />
+              <Route path="/household" element={<HouseholdPage />} />
+              <Route path="/household/:id" element={<HouseholdItemDetailPage />} />
               <Route path="/settings" element={<SettingPsage />} />
               <Route path="/payment/success" element={<PaymentSuccessPage />} />
               <Route path="/payment/cancel" element={<PaymentCancelPage />} />

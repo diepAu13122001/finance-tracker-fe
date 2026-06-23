@@ -2,9 +2,10 @@ import { DS } from '@/lib/design-system'
 import { usePlan } from '@/hooks/usePlan'
 import { useAuthStore } from '@/stores/authStore'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Settings } from 'lucide-react'
+import { LogOut, Settings, Bell } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { notify, TOAST_MESSAGES } from '@/lib/toast'
+import { useNotifications } from '@/hooks/useNotifications'
 
 // ─── Plan badge màu theo gói ──────────────────────────────────────────────────
 
@@ -20,9 +21,13 @@ const PlanBadge = () => {
     return <span className={config.className}>{config.label}</span>
 }
 
+
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const TopBar = () => {
+    // Thêm hook trong TopBar component
+    const { unreadCount, markAllRead } = useNotifications()
     const navigate = useNavigate()
     const user = useAuthStore(s => s.user)
     const queryClient = useQueryClient()
@@ -54,6 +59,19 @@ export const TopBar = () => {
                 <span className={`${DS.muted} hidden sm:block`}>
                     {user?.firstName}
                 </span>
+
+                <button
+                    onClick={markAllRead}
+                    className="relative p-2 rounded-lg hover:bg-surface-muted text-text-muted transition-colors"
+                >
+                    <Bell size={18} />
+                    {unreadCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-danger-500 text-white
+            text-xs rounded-full flex items-center justify-center font-bold leading-none">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                    )}
+                </button>
 
                 <button
                     onClick={() => navigate('/settings')}
