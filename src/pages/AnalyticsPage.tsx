@@ -7,6 +7,7 @@ import { PlanGate } from '@/components/shared/PlanGate'
 import { useCategoryChart } from '@/hooks/useCharts'
 import { usePlan } from '@/hooks/usePlan'
 import { UpgradePrompt } from '@/components/shared'
+import { HouseholdAnalyticsSection } from '@/components/household/HouseholdAnalyticsSection'
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `Tháng ${i + 1}` }))
 const QUARTERS = [
@@ -23,7 +24,7 @@ type PieFilterMode = 'month' | 'quarter' | 'year'
 
 const AnalyticsPage = () => {
 
-    const { isPlus } = usePlan()
+    const { isPlus, isPremium } = usePlan()
 
     if (!isPlus) {
         return (
@@ -80,6 +81,13 @@ const AnalyticsPage = () => {
 
     return (
         <div className="max-w-3xl mx-auto p-6 flex flex-col gap-6">
+
+            <PlanGate
+                requires="PREMIUM"
+                fallback={isPremium ? null : <UpgradePrompt requiredPlan="PREMIUM" layout="card" />}
+            >
+                <HouseholdAnalyticsSection />
+            </PlanGate>
 
             <div>
                 <h1 className={DS.heading1}>Phân tích</h1>

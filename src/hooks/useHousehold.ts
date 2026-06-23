@@ -16,6 +16,9 @@ export const HOUSEHOLD_KEYS = {
   detail: (id: string) => ["household", "detail", id] as const,
   topRated: (category?: string) =>
     ["household", "top-rated", category] as const,
+  analytics: ["household", "analytics"] as const,
+  restockPrediction: (id: string) =>
+    ["household", "restock-prediction", id] as const,
 };
 
 export const useHouseholdItems = (
@@ -41,6 +44,21 @@ export const useTopRatedItems = (category?: string) =>
   useQuery({
     queryKey: HOUSEHOLD_KEYS.topRated(category),
     queryFn: () => householdService.getTopRated(category),
+    staleTime: 5 * 60 * 1000,
+  });
+
+export const useHouseholdAnalytics = () =>
+  useQuery({
+    queryKey: HOUSEHOLD_KEYS.analytics,
+    queryFn: () => householdService.getAnalytics(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+export const useRestockPrediction = (id: string, enabled = true) =>
+  useQuery({
+    queryKey: HOUSEHOLD_KEYS.restockPrediction(id),
+    queryFn: () => householdService.getRestockPrediction(id),
+    enabled: enabled && !!id,
     staleTime: 5 * 60 * 1000,
   });
 

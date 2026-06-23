@@ -25,6 +25,7 @@ const schema = z.object({
     unit: z.string().optional(),
     notifyBeforeDays: z.number().min(1).max(90).optional(),
     notes: z.string().optional(),
+    linkToTransaction: z.boolean().optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -65,7 +66,7 @@ export const AddItemModal = ({ isOpen, onClose, editingItem }: AddItemModalProps
                 notes: editingItem.notes ?? '',
             })
         } else {
-            reset({ category: 'OTHER', notifyBeforeDays: 7 })
+            reset({ category: 'OTHER', notifyBeforeDays: 7, linkToTransaction: false })
         }
         setServerError(null)
     }, [isOpen, editingItem, reset])
@@ -204,6 +205,8 @@ export const AddItemModal = ({ isOpen, onClose, editingItem }: AddItemModalProps
                             </div>
                         </div>
                     </div>
+
+                    
 
                     <div className="grid grid-cols-2 gap-3">
                         <Input label="Ngày mua" type="date" {...register('purchaseDate')} />

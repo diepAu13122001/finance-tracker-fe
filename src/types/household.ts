@@ -38,12 +38,36 @@ export interface HouseholdItemRequest {
   unit?: string;
   notifyBeforeDays?: number;
   notes?: string;
+  linkToTransaction?: boolean;
 }
 
 export interface ReviewRequest {
   rating: number; // 1-5
   reviewText?: string;
   wouldBuyAgain?: boolean;
+}
+
+export interface HouseholdAnalyticsItem {
+  month: string;
+  category: ItemCategory;
+  totalSpent: number;
+  itemCount: number;
+}
+
+export interface HouseholdAnalyticsSummary {
+  currentMonthTotal: number;
+  previousMonthTotal: number;
+  percentageChange: number | null;
+  breakdown: HouseholdAnalyticsItem[];
+}
+
+export interface RestockPrediction {
+  itemId: string;
+  itemName: string;
+  predictedRunOutDate: string | null;
+  estimatedDaysLeft: number | null;
+  explanation: string;
+  hasEnoughData: boolean;
 }
 
 export const ITEM_CATEGORY_CONFIG: Record<

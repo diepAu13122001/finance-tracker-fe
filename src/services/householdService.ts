@@ -2,6 +2,8 @@ import { api } from "@/lib/api";
 import type {
   HouseholdItemRequest,
   HouseholdItemResponse,
+  HouseholdAnalyticsSummary,
+  RestockPrediction,
   ReviewRequest,
 } from "@/types/household";
 import type { ItemCategory, ItemStatus } from "@/types/household";
@@ -73,6 +75,20 @@ export const householdService = {
 
   addReview: async (id: string, req: ReviewRequest): Promise<void> => {
     await api.post(`/api/household/${id}/review`, req);
+  },
+
+  getAnalytics: async (): Promise<HouseholdAnalyticsSummary> => {
+    const { data } = await api.get<HouseholdAnalyticsSummary>(
+      "/api/household/analytics/summary",
+    );
+    return data;
+  },
+
+  getRestockPrediction: async (id: string): Promise<RestockPrediction> => {
+    const { data } = await api.get<RestockPrediction>(
+      `/api/ai/restock-prediction/${id}`,
+    );
+    return data;
   },
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
