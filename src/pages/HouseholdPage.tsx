@@ -11,6 +11,8 @@ import { useHouseholdItems, useTopRatedItems } from '@/hooks/useHousehold'
 import { Skeleton } from '@/components/shared/Skeleton'
 import { ITEM_CATEGORY_CONFIG, ITEM_STATUS_CONFIG } from '@/types/household'
 import type { HouseholdItemResponse, ItemCategory, ItemStatus } from '@/types/household'
+import { UpgradePrompt } from '@/components/shared'
+import { usePlan } from '@/hooks/usePlan'
 
 type HouseholdTab = 'ITEMS' | 'TOP_RATED'
 
@@ -27,14 +29,29 @@ const HouseholdPage = () => {
 
     const items = data?.content ?? []
     const expiringCount = items.filter(i => i.expiringSoon || i.expired).length
+    const { isPremium } = usePlan()
+
+    if (!isPremium) {
+        return (
+
+            <div className="max-w-3xl mx-auto p-6">
+
+                <div>
+                    <h1 className={DS.heading1}>Đồ dùng gia đình</h1>
+                    <p className={DS.muted}>Theo dõi và đánh giá sản phẩm</p>
+                </div>
+                <div className="mt-6"><UpgradePrompt requiredPlan="PREMIUM" layout="card" /></div>
+            </div>
+        )
+    }
 
     return (
-        <PlanGate requires="PREMIUM">
-            <div className="max-w-3xl mx-auto p-6 flex flex-col gap-6">
+        <div className="max-w-3xl mx-auto p-6 flex flex-col gap-6">
+            <PlanGate requires="PREMIUM">
 
                 <div className={`flex items-center justify-between ${animations.fadeInUp}`}>
                     <div>
-                        <h1 className={DS.heading1}>🏠 Đồ dùng gia đình</h1>
+                        <h1 className={DS.heading1}>Đồ dùng gia đình</h1>
                         <p className={DS.muted}>Theo dõi và đánh giá sản phẩm</p>
                     </div>
                     <Button leftIcon={<Plus size={16} />} onClick={() => { setEditing(null); setModalOpen(true) }}>
@@ -185,8 +202,8 @@ const HouseholdPage = () => {
                     item={reviewItem}
                     onClose={() => setReviewItem(null)}
                 />
-            </div>
-        </PlanGate>
+            </PlanGate>
+        </div>
     )
 }
 

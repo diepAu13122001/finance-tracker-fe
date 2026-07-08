@@ -84,13 +84,6 @@ export const householdService = {
     return data;
   },
 
-  getRestockPrediction: async (id: string): Promise<RestockPrediction> => {
-    const { data } = await api.get<RestockPrediction>(
-      `/api/ai/restock-prediction/${id}`,
-    );
-    return data;
-  },
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getTopRated: async (category?: string, limit = 10): Promise<any[]> => {
     const params: Record<string, unknown> = { limit };
@@ -99,6 +92,13 @@ export const householdService = {
     const { data } = await api.get<any[]>("/api/household/top-rated", {
       params,
     });
+    return data;
+  },
+  
+  getRestockPrediction: async (id: string): Promise<RestockPrediction> => {
+    const { data } = await api.get<RestockPrediction>(
+      `/api/ai/restock-prediction/${id}`,
+    );
     return data;
   },
 };

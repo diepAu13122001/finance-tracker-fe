@@ -11,6 +11,8 @@ import { formatVND } from '@/utils/format'
 import { Skeleton } from '@/components/shared/Skeleton'
 import { ITEM_CATEGORY_CONFIG, ITEM_STATUS_CONFIG } from '@/types/household'
 import type { ItemStatus } from '@/types/household'
+import { useRestockPrediction } from '@/hooks/useHousehold'
+
 
 const HouseholdItemDetailPage = () => {
     const { id } = useParams<{ id: string }>()
@@ -23,6 +25,7 @@ const HouseholdItemDetailPage = () => {
     const { data: item, isLoading } = useHouseholdItem(id ?? '', !!id)
     const updateStatus = useUpdateItemStatus()
     const deleteMutation = useDeleteHouseholdItem()
+    const { data: restock } = useRestockPrediction(id ?? '', !!id)
 
     const handleStatusChange = async (newStatus: ItemStatus) => {
         if (!item) return
@@ -144,6 +147,35 @@ const HouseholdItemDetailPage = () => {
                     </div>
                 )}
             </div>
+
+            {restock && (
+                <div className={DS.card}>
+                    <h3 className={`${DS.heading3} mb-2`}>Dự đoán mua lại</h3>
+                    {restock.hasEnoughData ? (
+                        <div className="flex flex-col gap-2">
+                            <p className="text-sm text-text-primary">{restock.explanation}</p>
+                            <div className="flex items-center gap-4 text-sm">
+                                <span className="text-text-muted">
+                                    Còn lại:{' '}
+                                    <span className="font-semibold text-primary-600">
+                                        {restock.estimatedDaysLeft} ngày
+                                    </span>
+                                </span>
+                                {restock.predictedRunOutDate && (
+                                    <span className="text-text-muted">
+                                        Dự kiến hết:{' '}
+                                        <span className="font-semibold text-text-primary">
+                                            {restock.predictedRunOutDate}
+                                        </span>
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-text-muted">{restock.explanation}</p>
+                    )}
+                </div>
+            )}
 
             {/* Action buttons */}
             <div className={DS.card}>

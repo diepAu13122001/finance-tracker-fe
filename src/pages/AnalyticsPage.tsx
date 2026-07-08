@@ -9,6 +9,7 @@ import { usePlan } from '@/hooks/usePlan'
 import { UpgradePrompt } from '@/components/shared'
 import { HouseholdAnalyticsSection } from '@/components/household/HouseholdAnalyticsSection'
 
+
 const MONTHS = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `Tháng ${i + 1}` }))
 const QUARTERS = [
     { value: 1, label: 'Quý 1 (T1–T3)', startMonth: 1, endMonth: 3 },
@@ -28,7 +29,9 @@ const AnalyticsPage = () => {
 
     if (!isPlus) {
         return (
+
             <div className="max-w-3xl mx-auto p-6">
+
                 <div>
                     <h1 className={DS.heading1}>Phân tích</h1>
                     <p className={DS.muted}>Xu hướng thu chi của bạn</p>

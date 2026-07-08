@@ -116,6 +116,8 @@ export const AddItemModal = ({ isOpen, onClose, editingItem }: AddItemModalProps
             unit: data.unit || undefined,
             notifyBeforeDays: data.notifyBeforeDays,
             notes: data.notes || undefined,
+            linkToTransaction: data.linkToTransaction,
+
         }
         try {
             if (isEdit && editingItem) {
@@ -206,7 +208,20 @@ export const AddItemModal = ({ isOpen, onClose, editingItem }: AddItemModalProps
                         </div>
                     </div>
 
-                    
+                    {!isEdit && (
+                        <label className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-surface-border cursor-pointer hover:bg-surface-muted">
+                            <input
+                                type="checkbox"
+                                className="w-4 h-4 accent-primary-500"
+                                {...register('linkToTransaction')}
+                            />
+                            <span className="text-sm text-text-primary">
+                                Ghi khoản này vào chi tiêu (tạo giao dịch "Mua sắm")
+                            </span>
+                        </label>
+                    )}
+
+
 
                     <div className="grid grid-cols-2 gap-3">
                         <Input label="Ngày mua" type="date" {...register('purchaseDate')} />

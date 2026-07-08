@@ -48,7 +48,7 @@ export interface ReviewRequest {
 }
 
 export interface HouseholdAnalyticsItem {
-  month: string;
+  month: string; // "YYYY-MM" — khớp với field month của BE
   category: ItemCategory;
   totalSpent: number;
   itemCount: number;

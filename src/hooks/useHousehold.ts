@@ -51,15 +51,7 @@ export const useHouseholdAnalytics = () =>
   useQuery({
     queryKey: HOUSEHOLD_KEYS.analytics,
     queryFn: () => householdService.getAnalytics(),
-    staleTime: 5 * 60 * 1000,
-  });
-
-export const useRestockPrediction = (id: string, enabled = true) =>
-  useQuery({
-    queryKey: HOUSEHOLD_KEYS.restockPrediction(id),
-    queryFn: () => householdService.getRestockPrediction(id),
-    enabled: enabled && !!id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // cache 5 phút, đỡ gọi API liên tục
   });
 
 export const useCreateHouseholdItem = () => {
@@ -122,3 +114,11 @@ export const useAddReview = () => {
     onError: (err) => notify.error(getApiErrorMessage(err)),
   });
 };
+
+export const useRestockPrediction = (id: string, enabled = true) =>
+  useQuery({
+    queryKey: HOUSEHOLD_KEYS.restockPrediction(id),
+    queryFn: () => householdService.getRestockPrediction(id),
+    enabled: enabled && !!id,
+    staleTime: 5 * 60 * 1000,
+  });
